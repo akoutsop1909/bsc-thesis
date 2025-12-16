@@ -13,7 +13,7 @@ install.packages(c("ggplot2", "lubridate", "dplyr", "glue"))
 ```
 * To ensure correct date formatting, your computer's display language must be set to **English (United States)** in the language settings.
 > [!NOTE]
-> Alternatively, the link in the "about" section opens a google colab notebook (with links to other notebooks) to view the executed code and graphs as well as a brief description.
+> If you prefer to view the generated graphs without setting up the coding environment or running your own simulations, you can access a **Colab notebook** linked in the **About** section of this repository. This notebook summarizes Chapter 2 of the thesis, featuring key findings and relevant graphs, all generated from pre-executed code. It also provides links to additional notebooks, each featuring insights and visualizations for the other chapters of the thesis.
 
 ## 📊 Data Sources
 The original CSV files can be found [here](https://data.nrel.gov/submissions/69).  
@@ -33,7 +33,9 @@ The original CSV files can be found [here](https://data.nrel.gov/submissions/69)
 * ```L1-L2.R```: returns a LoadShifting or TimeZones structure back to the PEV_L1 and PEV_L2 structures.
 
 ## ⌨️ Demo Run
-![Figure 3 1 - Average yearly demand by day](https://github.com/user-attachments/assets/7b9562f9-a1ec-43e5-9be9-48b8b2c1726d)
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/91ad9dce-2bba-4d8d-8299-799e28eb0621" alt="Figure 3 1 - Average yearly demand by day">
+</p>
 
 ## 📂 Folder Structure
 
