@@ -23,7 +23,7 @@ The original CSV files can be found [here](https://data.nrel.gov/submissions/69)
 * ```TimeZones_old.csv```: new structure that categorizes the energy demand by time zone.
 * ```TimeZones.csv```: includes only the charges per time zone for a working week of January. 
 
-## The scripts
+## 🚀 Getting Started
 * ```Chapter 2 Plots.R```: a first look at the dataset.
 * ```Chapter 4 Plots.R```: thorough investigation of the dataset.
 * ```Chapter 5 Plots.R```: TimeZones structure exploraton.
@@ -31,5 +31,10 @@ The original CSV files can be found [here](https://data.nrel.gov/submissions/69)
 * ```TimeZones.R```: creates the new TimeZones structure.
 * ```LoadShifting.R```: applies the load shifting strategy to the TimeZones structure.
 * ```L1-L2.R```: returns a LoadShifting or TimeZones structure back to the PEV_L1 and PEV_L2 structures.
+
+## ⌨️ Demo Run
+![Figure 3 1 - Average yearly demand by day](https://github.com/user-attachments/assets/7b9562f9-a1ec-43e5-9be9-48b8b2c1726d)
+
+## 📂 Folder Structure
 
 <!-- ![Placeholder](https://via.placeholder.com/150) -->
