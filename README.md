@@ -7,7 +7,7 @@ As plug-in electric vehicle (PEV) adoption accelerates, uncoordinated charging h
 
 ## ⚙️ System Requirements
 * **R** and an **R IDE** (such as **R Studio**) are required. You can download both from the [official RStudio website](https://posit.co/download/rstudio-desktop/).
-* The following R packages are required to run the scripts: `ggplot2`, `lubridate`, `dplyr`, and `glue`. You can install them by running the following command in your R console:  
+* You will also need the following R packages: `ggplot2`, `lubridate`, `dplyr`, and `glue`. You can install them by running this command in your R console:  
 ```
 install.packages(c("ggplot2", "lubridate", "dplyr", "glue"))
 ```
