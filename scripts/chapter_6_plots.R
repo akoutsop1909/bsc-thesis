@@ -1,0 +1,275 @@
+# =============================================================================
+# Script to Generate the Plots of Chapter 6 Studying Load Shifting Cases
+# =============================================================================
+# This script presents the results of load shifting applied to the Time Zones
+# structure across two main cases, each containing five subcases. The simulation 
+# used varying percentages of load shifted between time zones for each subcase.
+#
+#  - Case 1: Load shifting using the same percentage for a1, b1, and c1 in each subcase:
+#    - Subcase 1: 0.1 (10% of the load)
+#    - Subcase 2: 0.2 (20% of the load)
+#    - Subcase 3: 0.3 (30% of the load)
+#    - Subcase 4: 0.4 (40% of the load)
+#    - Subcase 5: 0.5 (50% of the load)
+#
+#  - Case 2: Load shifting using only the a1 percentage across all subcases:
+#    - Subcase 1: 0.1 (10% of the load)
+#    - Subcase 2: 0.2 (20% of the load)
+#    - Subcase 3: 0.3 (30% of the load)
+#    - Subcase 4: 0.4 (40% of the load)
+#    - Subcase 5: 0.5 (50% of the load)
+#
+# Several visualizations were created to study each case and subcase, including
+# kWh per time zone, weekly and daily power demand, and energy saving comparisons.
+
+# Set the case number (1 or 2) and the corresponding percentage setting
+case <- 1                  # Set "1" for Case 1 or "2" for Case 2
+percentage <- "a1, b1, c1" # Set "a1, b1, c1" for Case 1 or "a1" for Case 2
+
+# Load Packages
+# =============================================================================
+library(ggplot2)
+library(lubridate)
+library(dplyr)
+
+# Set Current Working Directory (adjust path as needed)
+# =============================================================================
+setwd("D:/Informatics/BigData") # Path to data files (CSV)
+
+# Define Functions
+# =============================================================================
+# Sums the kWh of all PEVs by time zone for L1 charges on Tuesday.
+#
+# Returns a data frame with the following columns:
+# 'Time_Zone' : The time zone (e.g., Peak, Off Peak, etc.).
+# 'KWh'       : Total kWh for the specified time zone.
+# 'a1b1c1'    : The percentage parameter passed to the function.
+kwh.by.zone <- function(file, percentage) {
+  df <- read.csv2(file, stringsAsFactors = FALSE)
+  df %>%
+    mutate(Date = dmy(Date), Day = format(Date, "%a")) %>%
+    filter(Charge_Type == "L1" & Day == "Tue") %>%
+    group_by(Time_Zone) %>% 
+    summarise(KWh = sum(KWh), .groups = "drop") %>% 
+    mutate(a1b1c1 = percentage) 
+}
+
+# Sums the power demand of all PEVs for each timestamp for the load-shifting week.
+#
+# Returns a data frame with the following columns:
+# 'Time'   : Timestamp (in 10-minute intervals for the load-shifting week).
+# 'Demand' : Total power demand for each timestamp.
+# 'Type'   : Type of data ("Before load shifting", "After load shifting").
+demand <- function(file, type) {
+  df <- read.csv2(file)
+  lower <- match(("4/1/2010 0:00"), df$Time)
+  upper <- match(("8/1/2010 23:50"), df$Time)
+  
+  df %>%
+    slice(lower:upper) %>%
+    mutate(Demand = rowSums(select(., -Time)),
+           Time = dmy_hm(Time), 
+           Type = type) %>%
+    select(Time, Demand, Type)
+}
+
+# Sums the power demand of all PEVs for each timestamp on Tuesday.
+#
+# Returns a data frame with the following columns:
+# 'Time'   : Timestamp (in 10-minute intervals on Tuesday).
+# 'Demand' : Total power demand for each timestamp.
+# 'Type'   : Type of data ("Before load shifting", "After load shifting").
+tue.demand <- function(file, type) {
+  df <- read.csv2(file)
+  lower <- match(("4/1/2010 22:00"), df$Time)
+  upper <- match(("6/1/2010 6:50"), df$Time)
+  
+  df %>%
+    slice(lower:upper) %>%
+    mutate(Demand = rowSums(select(., -Time)),
+           Time = dmy_hm(Time),
+           Type = type) %>%
+    select(Time, Demand, Type)
+}
+
+# Prepare Plots
+# =============================================================================
+plot1 <- function(df, type) {
+  # Case X: kWh per time zone for L1 charges on Tuesday"
+  mycolor <- scale_color_manual(values = c("slateblue4", "orangered2", "orchid3", "darkgoldenrod3"))
+  mytheme <- theme(plot.title = element_text(hjust = 0.5),
+                   legend.position = "top", 
+                   legend.justification = "left",
+                   legend.direction = "horizontal",
+                   legend.title = element_text(face = "bold"),
+                   legend.background = element_rect(colour = "black"))
+  
+  ggplot(df, aes(x = a1b1c1, y = KWh, color = Time_Zone, size = 4)) + geom_point() +
+    labs(color = "Time Zones:", x = type) +
+    guides(colour = guide_legend(override.aes = list(size = 4))) +
+    scale_size(guide = "none") +
+    mycolor + mytheme
+}
+
+plot2 <- function(df) {
+  # Case X - Subcase Y: Weekly power demand with L1/L2 charging
+  mytimes <- c(dmy_hm("4/1/2010 7:00"), dmy_hm("4/1/2010 14:00"), dmy_hm("4/1/2010 20:00"), dmy_hm("4/1/2010 22:00"), dmy_hm("5/1/2010 7:00"), dmy_hm("5/1/2010 14:00"), dmy_hm("5/1/2010 20:00"), dmy_hm("5/1/2010 22:00"), dmy_hm("6/1/2010 7:00"), dmy_hm("6/1/2010 14:00"), dmy_hm("6/1/2010 20:00"), dmy_hm("6/1/2010 22:00"), dmy_hm("7/1/2010 7:00"), dmy_hm("7/1/2010 14:00"), dmy_hm("7/1/2010 20:00"), dmy_hm("7/1/2010 22:00"), dmy_hm("8/1/2010 7:00"), dmy_hm("8/1/2010 14:00"), dmy_hm("8/1/2010 20:00"), dmy_hm("8/1/2010 22:00"))
+  mycolor <- scale_color_manual(values = c("black", "black", "black"))
+  myfill <- scale_fill_manual(values = c("slateblue4", "orangered2", "seagreen4"))
+  mytheme <- theme(plot.title = element_text(hjust = 0.3),
+                   axis.title.x = element_blank(), 
+                   legend.position = "top", 
+                   legend.justification = "left",
+                   legend.direction = "horizontal",
+                   legend.title = element_blank(), 
+                   legend.background = element_rect(colour = "black"))
+  
+  ggplot(df, aes(x = Time, y = Demand, color = Type)) +
+    geom_line() +
+    geom_ribbon(aes(ymin = 0, ymax = Demand, fill = Type), alpha = .6) +
+    geom_vline(xintercept = mytimes, linetype = "dashed", size = 1) +
+    scale_x_datetime(date_labels = "%a", breaks = "1 day") +
+    labs(y = "Demand (W)") +
+    myfill + mycolor + mytheme
+}
+
+plot3 <- function(df) {
+  # Case X - Subcase Y: Daily power demand with L1/L2 charging
+  mytimes <- c(dmy_hm("4/1/2010 22:00"), dmy_hm("5/1/2010 7:00"), dmy_hm("5/1/2010 14:00"), dmy_hm("5/1/2010 20:00"), dmy_hm("5/1/2010 22:00"), dmy_hm("6/1/2010 7:00"))
+  mycolor <- scale_color_manual(values = c("slateblue4", "orangered2", "orchid3", "darkgoldenrod3"))
+  mytheme <- theme(plot.title = element_text(hjust = 0.5),
+                   axis.title.x = element_blank(), 
+                   legend.position = "top", 
+                   legend.justification = "left",
+                   legend.direction = "horizontal",
+                   legend.title = element_blank(), 
+                   legend.background = element_rect(colour = "black"))
+  
+  ggplot(df, aes(x = Time, y = Demand, color = Type)) +
+    geom_line(size = 1) +
+    geom_vline(xintercept = mytimes, linetype = "dashed", size = 1) +
+    scale_x_datetime(date_labels = "%H:%M", breaks = "4 hours") +
+    labs(y = "Demand (W)") +
+    mycolor + mytheme
+}
+
+plot4 <- function(df, type) {
+  # Energy saving for Case X
+  mycolor <- scale_color_manual(values = c("orangered2", "slateblue4"))
+  mytheme <- theme(plot.title = element_text(hjust = 0.5),
+                   legend.position = "top", 
+                   legend.justification = "left",
+                   legend.direction = "horizontal",
+                   legend.title = element_blank(), 
+                   legend.background = element_rect(colour = "black"))
+  
+  ggplot(df, aes(x = a1b1c1, y = Percentage, group = Type)) +
+    geom_line(aes(color = Type), size = 1) +
+    facet_grid(. ~ Class) +
+    labs(x = type) +
+    mycolor + mytheme
+}
+
+# Calculate kWh by time zone for L1 charges on Tuesday across all subcases
+# =============================================================================
+TZ <- kwh.by.zone(file.path("TimeZones.csv"), 0)
+LS01 <- kwh.by.zone(file.path(paste0("Case", case), "LoadShifting01.csv"), 0.1)
+LS02 <- kwh.by.zone(file.path(paste0("Case", case), "LoadShifting02.csv"), 0.2)
+LS03 <- kwh.by.zone(file.path(paste0("Case", case), "LoadShifting03.csv"), 0.3)
+LS04 <- kwh.by.zone(file.path(paste0("Case", case), "LoadShifting04.csv"), 0.4)
+LS05 <- kwh.by.zone(file.path(paste0("Case", case), "LoadShifting05.csv"), 0.5)
+
+LS <- rbind(TZ, LS01, LS02, LS03, LS04, LS05)
+
+# Calculate weekly power demand for all subcases
+# =============================================================================
+L1_00 <- demand("PEV_L1.csv", "Before load shifting")
+L2_00 <- demand("PEV_L2.csv", "Before load shifting")
+
+L1_01 <- demand(file.path(paste0("Case", case), "L1_01.csv"), "After load shifting")
+L1_01 <- rbind(L1_00, L1_01)
+L1_01$Type <- factor(L1_01$Type, levels = c("Before load shifting", "After load shifting"))
+L2_01 <- demand(file.path(paste0("Case", case), "L2_01.csv"), "After load shifting")
+L2_01 <- rbind(L2_00, L2_01)
+L2_01$Type <- factor(L2_01$Type, levels = c("Before load shifting", "After load shifting"))
+
+L1_02 <- demand(file.path(paste0("Case", case), "L1_02.csv"), "After load shifting")
+L1_02 <- rbind(L1_00, L1_02)
+L1_02$Type <- factor(L1_02$Type, levels = c("Before load shifting", "After load shifting"))
+L2_02 <- demand(file.path(paste0("Case", case), "L2_02.csv"), "After load shifting")
+L2_02 <- rbind(L2_00, L2_02)
+L2_02$Type <- factor(L2_02$Type, levels = c("Before load shifting", "After load shifting"))
+
+L1_03 <- demand(file.path(paste0("Case", case), "L1_03.csv"), "After load shifting")
+L1_03 <- rbind(L1_00, L1_03)
+L1_03$Type <- factor(L1_03$Type, levels = c("Before load shifting", "After load shifting"))
+L2_03 <- demand(file.path(paste0("Case", case), "L2_03.csv"), "After load shifting")
+L2_03 <- rbind(L2_00, L2_03)
+L2_03$Type <- factor(L2_03$Type, levels = c("Before load shifting", "After load shifting"))
+
+L1_04 <- demand(file.path(paste0("Case", case), "L1_04.csv"), "After load shifting")
+L1_04 <- rbind(L1_00, L1_04)
+L1_04$Type <- factor(L1_04$Type, levels = c("Before load shifting", "After load shifting"))
+L2_04 <- demand(file.path(paste0("Case", case), "L2_04.csv"), "After load shifting")
+L2_04 <- rbind(L2_00, L2_04)
+L2_04$Type <- factor(L2_04$Type, levels = c("Before load shifting", "After load shifting"))
+
+L1_05 <- demand(file.path(paste0("Case", case), "L1_05.csv"), "After load shifting")
+L1_05 <- rbind(L1_00, L1_05)
+L1_05$Type <- factor(L1_05$Type, levels = c("Before load shifting", "After load shifting"))
+L2_05 <- demand(file.path(paste0("Case", case), "L2_05.csv"), "After load shifting")
+L2_05 <- rbind(L2_00, L2_05)
+L2_05$Type <- factor(L2_05$Type, levels = c("Before load shifting", "After load shifting"))
+
+# Calculate total power demand on Tuesday for all subcases
+# =============================================================================
+tueL1_00 <- tue.demand("PEV_L1.csv", "Before load shifting")
+tueL2_00 <- tue.demand("PEV_L2.csv", "Before load shifting")
+
+tueL1_01 <- tue.demand(file.path(paste0("Case", case), "L1_01.csv"), "After load shifting")
+tueL1_01 <- rbind(tueL1_00, tueL1_01)
+tueL2_01 <- tue.demand(file.path(paste0("Case", case), "L2_01.csv"), "After load shifting")
+tueL2_01 <- rbind(tueL2_00, tueL2_01)
+
+tueL1_03 <- tue.demand(file.path(paste0("Case", case), "L1_03.csv"), "After load shifting")
+tueL1_03 <- rbind(tueL1_00, tueL1_03)
+tueL2_03 <- tue.demand(file.path(paste0("Case", case), "L2_03.csv"), "After load shifting")
+tueL2_03 <- rbind(tueL2_00, tueL2_03)
+
+tueL1_05 <- tue.demand(file.path(paste0("Case", case), "L1_05.csv"), "After load shifting")
+tueL1_05 <- rbind(tueL1_00, tueL1_05)
+tueL2_05 <- tue.demand(file.path(paste0("Case", case), "L2_05.csv"), "After load shifting")
+tueL2_05 <- rbind(tueL2_00, tueL2_05)
+
+# Import Enegry Saving Data
+# =============================================================================
+ES <- read.csv2(file.path(paste0("Case", case), "EnergySaving.csv"), dec = ".")
+
+# Display Plots
+# =============================================================================
+plot1(LS, percentage) # Case X: kWh per time zone for L1 charges on Tuesday"
+
+# ==
+plot2(L1_01) # Case X - Subcase 1: Weekly power demand with L1 charging
+plot2(L1_02) # Case X - Subcase 2: Weekly power demand with L1 charging
+plot2(L1_03) # Case X - Subcase 3: Weekly power demand with L1 charging
+plot2(L1_04) # Case X - Subcase 4: Weekly power demand with L1 charging
+plot2(L1_05) # Case X - Subcase 5: Weekly power demand with L1 charging
+
+plot2(L2_01) # Case X - Subcase 1: Weekly power demand with L2 charging
+plot2(L2_02) # Case X - Subcase 2: Weekly power demand with L2 charging
+plot2(L2_03) # Case X - Subcase 3: Weekly power demand with L2 charging
+plot2(L2_04) # Case X - Subcase 4: Weekly power demand with L2 charging
+plot2(L2_05) # Case X - Subcase 5: Weekly power demand with L2 charging
+
+# ==
+plot3(tueL1_01) # Case X - Subcase 1: Daily power demand with L1 charging
+plot3(tueL1_03) # Case X - Subcase 3: Daily power demand with L1 charging
+plot3(tueL1_05) # Case X - Subcase 5: Daily power demand with L1 charging
+
+plot3(tueL2_01) # Case X - Subcase 1: Daily power demand with L2 charging
+plot3(tueL2_03) # Case X - Subcase 3: Daily power demand with L2 charging
+plot3(tueL2_05) # Case X - Subcase 5: Daily power demand with L2 charging
+
+# ==
+plot4(ES, percentage) # Energy saving for Case X
