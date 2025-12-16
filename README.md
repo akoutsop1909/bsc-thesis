@@ -6,11 +6,17 @@
 As plug-in electric vehicle (PEV) adoption accelerates, uncoordinated charging habits during peak hours can cause power losses, overloads, and voltage fluctuations in smart grids. This thesis simulates the success rate (10% - 50%) of a hypothetical campaign encouraging consumers to charge their PEVs during off-peak hours to help balance grid load. Data analytics tools and descriptive statistics are used to manipulate data and visualize results. The findings show that even a slight shift in consumer behavior during peak hours can lead to a more balanced distribution of energy demand.
 
 ## ⚙️ System Requirements
-This repository contains the CSV files and R scripts of the BSc thesis, ready to execute in R environment. To produce the graphs correctly, it is recommended to change the computer's region to the United States of America so R assigns dates in English (not in Greek). Alternatively, the link in the "about" section opens a google colab notebook (with links to other notebooks) to view the executed code and graphs as well as a brief description.
-
-The original CSV files can be found [here](https://data.nrel.gov/submissions/69).
+* **R** and an **R IDE** (such as **R Studio**) are required. You can download both from the [official RStudio website](https://posit.co/download/rstudio-desktop/).
+* The following R packages are required to run the scripts: `ggplot2`, `lubridate`, `dplyr`, and `glue`. You can install them by running the following command in your R console:  
+```
+install.packages(c("ggplot2", "lubridate", "dplyr", "glue"))
+```
+* To ensure correct date formatting, your computer's display language must be set to **English (United States)** in the language settings.
+> [!NOTE]
+> Alternatively, the link in the "about" section opens a google colab notebook (with links to other notebooks) to view the executed code and graphs as well as a brief description.
 
 ## 📊 Data Sources
+The original CSV files can be found [here](https://data.nrel.gov/submissions/69).  
 * ```House.csv```: the energy demand of the houses (in Watt).
 * ```PEV_L1.csv```: the energy demand of vehicles charging with the L1 charging type (in Watt).
 * ```PEV_L2.csv```: the energy demand of vehicles charging with the L2 charging type (in Watt).
