@@ -30,7 +30,7 @@ This thesis uses three primary datasets, which were sourced from the [National L
 | ...              | ...         | ...         | ...         | ... | ...           |
 | 31/12/2010 23:50 | 1625.00     | 1013.30     | 420.61      | ... | 919.74        |
 
-2. **PEV Charging Demand Using Level 1 Charging (PEV_L1)**
+2. **PEV Charging Demand Using Level 1 Charging (PEV_L1.csv)**
 
 | Time             | H001.V001 | H002.V002 | H002.V003 | ... | H200.V348 |
 |------------------|----------:|----------:|----------:|:---:|----------:|
@@ -42,7 +42,7 @@ This thesis uses three primary datasets, which were sourced from the [National L
 | ...              | ...       | ...       | ...       | ... | ...       |
 | 31/12/2010 23:50 | 0         | 0         | 0         | ... | 0         |
 
-3. **PEV Charging Demand Using Level 2 Charging (PEV_L2)**
+3. **PEV Charging Demand Using Level 2 Charging (PEV_L2.csv)**
 
 | Time             | H001.V001 | H002.V002 | H002.V003 | ... | H200.V348 |
 |------------------|----------:|----------:|----------:|:---:|----------:|
@@ -56,7 +56,7 @@ This thesis uses three primary datasets, which were sourced from the [National L
 
 > [!NOTE]
 > The format `H001.V001` refers to **Household 1 (H001)** and **Vehicle 1 (V001)**, with each subsequent vehicle labeled similarly.  
-> **Zero** values indicate that the vehicle is **not charging** at that time, while **non-zero** values (1920 for Level 1 or 6600 for Level 2) represent the charging power in watts at that moment.
+> A value of **zero** indicates that the vehicle is **not charging** at that time, while any **non-zero** value (1920 for Level 1 or 6600 for Level 2) represent the charging power in watts at that moment.
 
 ## 🚀 Getting Started
 * ```Chapter 2 Plots.R```: a first look at the dataset.
