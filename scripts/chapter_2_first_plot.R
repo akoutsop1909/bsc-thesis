@@ -14,7 +14,7 @@ library(dplyr)
 
 # Set Current Working Directory (adjust path as needed)
 # =============================================================================
-setwd("D:/Informatics/data") # Path to the /data directory
+setwd("../data") # Path to the /data directory
 
 # Define Functions
 # =============================================================================
