@@ -8,6 +8,10 @@
 # slot is found, the 'Noise' column records the percentage of overlapping kWh 
 # with other charges from the same PEV.
 
+# Note: The Time Zones structure is created in the 'convert_to_time_zones.R' script.
+# After applying load shifting, the resulting CSV can be converted back to the 
+# PEV_L1 and PEV_L2 structures by running the 'convert_to_pev_l1_l2.R' script.
+
 # Load Packages
 # =============================================================================
 library(lubridate)
@@ -15,7 +19,7 @@ library(dplyr)
 
 # Set Current Working Directory (adjust path as needed)
 # =============================================================================
-setwd("D:/Informatics/BigData") # Path to data files (CSV)
+setwd("D:/Informatics/data") # Path to the /data directory
 
 # Define Functions
 # =============================================================================
@@ -51,42 +55,36 @@ peak.sample.shifting <- function(df, dailyIndexes) {
   
   # Sample indexes from peak
   sampleKWH <- 0
-  kWhPercentage <- 0
-  while (kWhPercentage < a1 && length(dailyIndexes) != 0) {
+  while (sampleKWH < totalKWH * a1 && length(dailyIndexes) > 0) {
     sampleIndex <- sample(dailyIndexes, size = 1)
     peakIndexes <- c(peakIndexes, sampleIndex)
     dailyIndexes <- dailyIndexes[dailyIndexes != sampleIndex]
     
     sampleKWH <- sampleKWH + df$KWh[sampleIndex]
-    kWhPercentage <- sampleKWH / totalKWH
   }
   
   # Filter data based on sampled peak indexes
   sampleData <- filter(df, Index %in% peakIndexes)
-  totalmKWH <- sum(sampleData$KWh) # Total kWh for sampled peak indexes
+  totalKWH <- sum(sampleData$KWh) # Total kWh for sampled peak indexes
   
   # Sample indexes for off peak from sampled peak indexes
   sampleKWH <- 0
-  kWhPercentage <- 0
-  while (kWhPercentage < d1 && length(peakIndexes) != 0) {
+  while (sampleKWH < totalKWH * d1 && length(peakIndexes) > 0) {
     sampleIndex <- sample(peakIndexes, size = 1)
     offPeakIndexes <- c(offPeakIndexes, sampleIndex)
     peakIndexes <- peakIndexes[peakIndexes != sampleIndex]
     
     sampleKWH <- sampleKWH + df$KWh[sampleIndex]
-    kWhPercentage <- sampleKWH / totalKWH
   }
   
   # Sample indexes for shoulder 1 from remaining sampled peak indexes
   sampleKWH <- 0
-  kWhPercentage <- 0
-  while (kWhPercentage < e1 && length(peakIndexes) != 0) {
+  while (sampleKWH < totalKWH * e1 && length(peakIndexes) > 0) {
     sampleIndex <- sample(peakIndexes, size = 1)
     shoulder1Indexes <- c(shoulder1Indexes, sampleIndex)
     peakIndexes <- peakIndexes[peakIndexes != sampleIndex]
     
     sampleKWH <- sampleKWH + df$KWh[sampleIndex]
-    kWhPercentage <- sampleKWH / totalKWH
   }
   
   # The remaining sampled peak indexes are allocated to shoulder 2
@@ -116,30 +114,26 @@ shoulder1.sample.shifting <- function(df, dailyIndexes) {
   
   # Sample indexes from shoulder 1
   sampleKWH <- 0
-  kWhPercentage <- 0
-  while (kWhPercentage < b1 && length(dailyIndexes) != 0) {
+  while (sampleKWH < totalKWH * b1 && length(dailyIndexes) > 0) {
     sampleIndex <- sample(dailyIndexes, size = 1)
     shoulder1Indexes <- c(shoulder1Indexes, sampleIndex)
     dailyIndexes <- dailyIndexes[dailyIndexes != sampleIndex]
     
     sampleKWH <- sampleKWH + df$KWh[sampleIndex]
-    kWhPercentage <- sampleKWH / totalKWH
   }
   
   # Filter data based on sampled shoulder 1 indexes
   sampleData <- filter(df, Index %in% shoulder1Indexes)
-  totalmKWH <- sum(sampleData$KWh) # Total kWh for sampled shoulder 1 indexes
+  totalKWH <- sum(sampleData$KWh) # Total kWh for sampled shoulder 1 indexes
   
   # Sample indexes for off peak from sampled shoulder 1 indexes
   sampleKWH <- 0
-  kWhPercentage <- 0
-  while (kWhPercentage < g1 && length(shoulder1Indexes) != 0) {
+  while (sampleKWH < totalKWH * g1 && length(shoulder1Indexes) > 0) {
     sampleIndex <- sample(shoulder1Indexes, size = 1)
     offPeakIndexes <- c(offPeakIndexes, sampleIndex)
     shoulder1Indexes <- shoulder1Indexes[shoulder1Indexes != sampleIndex]
     
     sampleKWH <- sampleKWH + df$KWh[sampleIndex]
-    kWhPercentage <- sampleKWH / totalKWH
   }
   
   # The remaining sampled shoulder 1 indexes are allocated to shoulder 2
@@ -167,14 +161,12 @@ shoulder2.sample.shifting <- function(df, dailyIndexes) {
   
   # Sample indexes from shoulder 2
   sampleKWH <- 0
-  kWhPercentage <- 0
-  while (kWhPercentage < c1 && length(dailyIndexes) != 0) {
+  while (sampleKWH < totalKWH * c1 && length(dailyIndexes) > 0) {
     sampleIndex <- sample(dailyIndexes, size = 1)
     shoulder2Indexes <- c(shoulder2Indexes, sampleIndex)
     dailyIndexes <- dailyIndexes[dailyIndexes != sampleIndex]
     
     sampleKWH <- sampleKWH + df$KWh[sampleIndex]
-    kWhPercentage <- sampleKWH / totalKWH
   }
   
   # The sampled shoulder 2 indexes are allocated to off peak
@@ -331,7 +323,7 @@ spans.midnight.overlap <- function(df, migratedCharge, targetSlots) {
   return (noise)
 }
 
-# Create time zone slots for the target zone
+# Create time zone slots for the target zone (global variables)
 # =============================================================================
 shoulder1Slots <- create.time.slots("7:00", "13:50")
 peakSlots <- create.time.slots("14:00", "19:50")
@@ -340,7 +332,7 @@ offPeakSlots <- create.time.slots("22:00", "6:50")
 
 # Prepare Time Zones Data Frame for Load Shifting
 # =============================================================================
-TZ <- read.csv2("TimeZones.csv", stringsAsFactors = FALSE)
+TZ <- read.csv2(file.path("time_zones", "TimeZones.csv"), stringsAsFactors = FALSE)
 TZ <- TZ %>%
   mutate(
     Index = seq_len(nrow(TZ)),
@@ -374,7 +366,7 @@ dailyShoulder1_L2 <- split(dailyShoulder1_L2, dailyShoulder1_L2$Date)
 dailyShoulder2_L1 <- split(dailyShoulder2_L1, dailyShoulder2_L1$Date)
 dailyShoulder2_L2 <- split(dailyShoulder2_L2, dailyShoulder2_L2$Date)
 
-# Initialize Parameters for Load Shifting Model
+# Initialize Parameters for Load Shifting Model (Global Variables)
 # =============================================================================
 a1 <- 0.1 # (Adjust as needed) percentage of kWh that will migrate from peak.
 d1 <- 0.5 # (Do not adjust)    percentage of a1 that will migrate to off peak.
@@ -387,37 +379,40 @@ c1 <- 0.1 # (Adjust as needed) percentage of kWh that will migrate from Shoulder
 
 # Data Sampling - Load Shifting
 # =============================================================================
-# dailyPeak_L1 Sampling and Shifting
+# Note: The following functions perform different load-shifting operations. 
+# You can run any combination of them, depending on the strategy you want to apply.
+
+# dailyPeak_L1 Sampling and Shifting (uses a1, d1, e1)
 for (dayData in dailyPeak_L1) {
   dailyIndexes <- dayData$Index  # Extract the indexes for the current day
   TZ <- peak.sample.shifting(TZ, dailyIndexes)  # Sample data and perform load shifting
 }
 
-# dailyPeak_L2 Sampling and Shifting
+# dailyPeak_L2 Sampling and Shifting (uses a1, d1, e1)
 for (dayData in dailyPeak_L2) {
   dailyIndexes <- dayData$Index  # Extract the indexes for the current day
   TZ <- peak.sample.shifting(TZ, dailyIndexes)  # Sample data and perform load shifting
 }
 
-# dailyShoulder1_L1 Sampling and Shifting
+# dailyShoulder1_L1 Sampling and Shifting (uses b1, g1)
 for (dayData in dailyShoulder1_L1) {
   dailyIndexes <- dayData$Index  # Extract the indexes for the current day
   TZ <- shoulder1.sample.shifting(TZ, dailyIndexes)  # Sample data and perform load shifting
 }
 
-# dailyShoulder1_L2 Sampling and Shifting
+# dailyShoulder1_L2 Sampling and Shifting (uses b1, g1)
 for (dayData in dailyShoulder1_L2) {
   dailyIndexes <- dayData$Index  # Extract the indexes for the current day
   TZ <- shoulder1.sample.shifting(TZ, dailyIndexes)  # Sample data and perform load shifting
 }
 
-# dailyShoulder2_L1 Sampling and Shifting
+# dailyShoulder2_L1 Sampling and Shifting (uses c1)
 for (dayData in dailyShoulder2_L1) {
   dailyIndexes <- dayData$Index  # Extract the indexes for the current day
   TZ <- shoulder2.sample.shifting(TZ, dailyIndexes)  # Sample data and perform load shifting
 }
 
-# dailyShoulder2_L2 Sampling and Shifting
+# dailyShoulder2_L2 Sampling and Shifting (uses c1)
 for (dayData in dailyShoulder2_L2) {
   dailyIndexes <- dayData$Index  # Extract the indexes for the current day
   TZ <- shoulder2.sample.shifting(TZ, dailyIndexes)  # Sample data and perform load shifting
@@ -442,4 +437,4 @@ sum(TZ$Noise[TZ$Charge_Type %in% "L2"]) / sum(TZ$KWh[TZ$Charge_Type %in% "L2"]) 
 
 # Export Load Shifting Data Frame to CSV Format (adjust path as needed)
 # =============================================================================
-write.csv2(TZ, "Loadshifting01.csv", row.names = FALSE) # Path to export file
+write.csv2(TZ, "LoadShifting01.csv", row.names = FALSE) # Path to export file

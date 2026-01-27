@@ -25,7 +25,7 @@ library(dplyr)
 
 # Set Current Working Directory (adjust path as needed)
 # =============================================================================
-setwd("D:/Informatics/BigData") # Path to data files (CSV)
+setwd("D:/Informatics/data") # Path to the /data directory
 
 # Define Functions
 # =============================================================================
@@ -141,8 +141,8 @@ convert.to.time.zones <- function(file, watt, type) {
 
 # Convert PEV_L1 and PEV_L2 structures to Time Zones structure
 # =============================================================================
-TZ_L1 <- convert.to.time.zones("PEV_L1.csv", 1920, "L1")
-TZ_L2 <- convert.to.time.zones("PEV_L2.csv", 6600, "L2")
+TZ_L1 <- convert.to.time.zones(file.path("processed", "PEV_L1.csv"), 1920, "L1")
+TZ_L2 <- convert.to.time.zones(file.path("processed", "PEV_L2.csv"), 6600, "L2")
 
 TZ <- rbind (TZ_L1, TZ_L2)
 TZ$Time_Zone <- NA
