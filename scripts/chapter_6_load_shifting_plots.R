@@ -121,10 +121,10 @@ plot2 <- function(df) {
   # Case X - Subcase Y: Weekly power demand with L1/L2 charging
   dates <- seq(dmy("4/1/2010"), dmy("8/1/2010"), by = "1 day")
   hours <- c("7:00", "14:00", "20:00", "22:00")
-  date_str <- format(dates, "%d/%m/%Y")
+  dates <- format(dates, "%d/%m/%Y")
   dark2_colors <- brewer.pal(3, "Dark2")
   
-  mytimes <- dmy_hm(paste(rep(date_str, each = length(hours)), hours))
+  mytimes <- dmy_hm(paste(rep(dates, each = length(hours)), hours))
   myfill <- scale_fill_manual(values = c(dark2_colors[3], dark2_colors[2]))
   mycolor <- scale_color_manual(values = c("black", "black", "black"))
   mytheme <- theme(plot.title = element_text(hjust = 0.3),
