@@ -159,7 +159,7 @@ plot3 <- function(df) {
                    legend.background = element_rect(colour = "black"))
   
   ggplot(df, aes(x = Time, y = Demand, color = Type)) +
-    geom_line(size = 1) +
+    geom_line(linewidth = 1) +
     geom_vline(xintercept = mytimes, linetype = "dashed", linewidth = 1) +
     scale_x_datetime(date_labels = "%H:%M", breaks = "4 hours") +
     labs(y = "Power Demand (W)") +
@@ -268,7 +268,7 @@ ES <- read.csv2(file.path("load_shifting", paste0("case", case), "EnergySaving.c
 
 # Display Plots
 # =============================================================================
-plot1(LS, percentage) # Case X: kWh per time zone for L1 charges on Tuesday"
+plot1(LS, percentage) # Case X: kWh per time zone for L1 charges on Tuesday
 
 # ==
 plot2(PEV_L1_01) # Case X - Subcase 1: Weekly power demand with L1 charging
