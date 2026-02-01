@@ -122,9 +122,9 @@ filter.by.daytype <- function(df, type) {
 # =============================================================================
 plot1 <- function(df) {
   # Monthly sum of power measurements (relative)
-  set1_colors <- brewer.pal(3, "Dark2")
+  dark2_colors <- brewer.pal(3, "Dark2")
   
-  myfill <- scale_fill_manual(values = c(set1_colors[2], set1_colors[3], set1_colors[1]))
+  myfill <- scale_fill_manual(values = c(dark2_colors[2], dark2_colors[3], dark2_colors[1]))
   mytheme <- theme(plot.title = element_text(hjust = 0.5),
                    axis.title.x = element_blank(), 
                    legend.position = "top", 
@@ -141,9 +141,9 @@ plot1 <- function(df) {
 
 plot2 <- function(df) {
   # Average yearly power demand on weekdays/weekends
-  set1_colors <- brewer.pal(3, "Dark2")
+  dark2_colors <- brewer.pal(3, "Dark2")
   
-  myfill <- scale_fill_manual(values = c(set1_colors[2], set1_colors[3], set1_colors[1]))
+  myfill <- scale_fill_manual(values = c(dark2_colors[2], dark2_colors[3], dark2_colors[1]))
   mycolor <- scale_color_manual(values = c("black", "black", "black"))
   mytheme <- theme(plot.title = element_text(hjust = 0.5),
                    axis.title.x = element_blank(), 
@@ -160,9 +160,9 @@ plot2 <- function(df) {
 
 plot3 <- function(df) {
   # Average yearly power demand on weekdays/weekends (bar chart)
-  set1_colors <- brewer.pal(7, "Dark2")
+  dark2_colors <- brewer.pal(7, "Dark2")
   
-  myfill <- scale_fill_manual(values = c(set1_colors[3], set1_colors[2], set1_colors[1], set1_colors[7], set1_colors[6]))
+  myfill <- scale_fill_manual(values = c(dark2_colors[3], dark2_colors[2], dark2_colors[1], dark2_colors[7], dark2_colors[6]))
   mytheme <- theme(plot.title = element_text(hjust = 0.5),
                    axis.title.x = element_blank(), 
                    legend.position = "none")
@@ -176,9 +176,9 @@ plot3 <- function(df) {
 
 plot4 <- function(df) {
   # Average yearly power demand on weekdays/weekends (box plot)
-  set1_colors <- brewer.pal(7, "Dark2")
+  dark2_colors <- brewer.pal(7, "Dark2")
   
-  myfill <- scale_fill_manual(values = c(set1_colors[3], set1_colors[2], set1_colors[1], set1_colors[7], set1_colors[6]))
+  myfill <- scale_fill_manual(values = c(dark2_colors[3], dark2_colors[2], dark2_colors[1], dark2_colors[7], dark2_colors[6]))
   mytheme <- theme(plot.title = element_text(hjust = 0.5),
                    axis.title.x = element_blank(), 
                    legend.position = "none")

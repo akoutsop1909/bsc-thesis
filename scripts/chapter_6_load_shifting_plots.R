@@ -100,9 +100,9 @@ tue.demand <- function(file, type) {
 # =============================================================================
 plot1 <- function(df, type) {
   # Case X: kWh per time zone for L1 charges on Tuesday"
-  set1_colors <- brewer.pal(7, "Dark2")
+  dark2_colors <- brewer.pal(7, "Dark2")
   
-  mycolor <- scale_color_manual(values = c(set1_colors[3], set1_colors[2], set1_colors[7], set1_colors[6]))
+  mycolor <- scale_color_manual(values = c(dark2_colors[3], dark2_colors[2], dark2_colors[7], dark2_colors[6]))
   mytheme <- theme(plot.title = element_text(hjust = 0.5),
                    legend.position = "top", 
                    legend.justification = "left",
@@ -122,10 +122,10 @@ plot2 <- function(df) {
   dates <- seq(dmy("4/1/2010"), dmy("8/1/2010"), by = "1 day")
   hours <- c("7:00", "14:00", "20:00", "22:00")
   date_str <- format(dates, "%d/%m/%Y")
-  set1_colors <- brewer.pal(3, "Dark2")
+  dark2_colors <- brewer.pal(3, "Dark2")
   
   mytimes <- dmy_hm(paste(rep(date_str, each = length(hours)), hours))
-  myfill <- scale_fill_manual(values = c(set1_colors[3], set1_colors[2]))
+  myfill <- scale_fill_manual(values = c(dark2_colors[3], dark2_colors[2]))
   mycolor <- scale_color_manual(values = c("black", "black", "black"))
   mytheme <- theme(plot.title = element_text(hjust = 0.3),
                    axis.title.x = element_blank(), 
@@ -146,10 +146,10 @@ plot2 <- function(df) {
 
 plot3 <- function(df) {
   # Case X - Subcase Y: Daily power demand with L1/L2 charging
-  set1_colors <- brewer.pal(3, "Dark2")
+  dark2_colors <- brewer.pal(3, "Dark2")
   
   mytimes <- c(dmy_hm("4/1/2010 22:00"), dmy_hm("5/1/2010 7:00"), dmy_hm("5/1/2010 14:00"), dmy_hm("5/1/2010 20:00"), dmy_hm("5/1/2010 22:00"), dmy_hm("6/1/2010 7:00"))
-  mycolor <- scale_color_manual(values = c(set1_colors[3], set1_colors[2]))
+  mycolor <- scale_color_manual(values = c(dark2_colors[3], dark2_colors[2]))
   mytheme <- theme(plot.title = element_text(hjust = 0.5),
                    axis.title.x = element_blank(), 
                    legend.position = "top", 
@@ -168,9 +168,9 @@ plot3 <- function(df) {
 
 plot4 <- function(df, type) {
   # Energy saving for Case X
-  set1_colors <- brewer.pal(3, "Dark2")
+  dark2_colors <- brewer.pal(3, "Dark2")
   
-  mycolor <- scale_color_manual(values = c(set1_colors[2], set1_colors[3]))
+  mycolor <- scale_color_manual(values = c(dark2_colors[2], dark2_colors[3]))
   mytheme <- theme(plot.title = element_text(hjust = 0.5),
                    legend.position = "top", 
                    legend.justification = "left",

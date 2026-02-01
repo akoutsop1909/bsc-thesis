@@ -24,9 +24,9 @@ setwd("../data") # Path to the /data directory
 # =============================================================================
 plot1 <- function(df, type) {
   # Number of L1/L2 charges per day by time zone
-  set1_colors <- brewer.pal(7, "Dark2")
+  dark2_colors <- brewer.pal(7, "Dark2")
   
-  myfill <- scale_fill_manual(values = c(set1_colors[3], set1_colors[2], set1_colors[1], set1_colors[7], set1_colors[6]))
+  myfill <- scale_fill_manual(values = c(dark2_colors[3], dark2_colors[2], dark2_colors[1], dark2_colors[7], dark2_colors[6]))
   mytheme <- theme(plot.title = element_text(hjust = 0.5),
                    axis.title.x = element_blank(), 
                    legend.position = "top", 
@@ -44,9 +44,9 @@ plot1 <- function(df, type) {
 
 plot2 <- function(df, type) {
   # Number of L1/L2 charges per week by time zone
-  set1_colors <- brewer.pal(7, "Dark2")
+  dark2_colors <- brewer.pal(7, "Dark2")
   
-  myfill <- scale_fill_manual(values = c(set1_colors[3], set1_colors[2], set1_colors[1], set1_colors[7], set1_colors[6]))
+  myfill <- scale_fill_manual(values = c(dark2_colors[3], dark2_colors[2], dark2_colors[1], dark2_colors[7], dark2_colors[6]))
   mytheme <- theme(plot.title = element_text(hjust = 0.5),
                    axis.title.x = element_blank(), 
                    legend.position = "top", 
@@ -65,9 +65,9 @@ plot2 <- function(df, type) {
 
 plot3 <- function(df, type) {
   # Number of L1/L2 charges per week by time zone (proportions)
-  set1_colors <- brewer.pal(7, "Dark2")
+  dark2_colors <- brewer.pal(7, "Dark2")
   
-  myfill <- scale_fill_manual(values = c(set1_colors[3], set1_colors[2], set1_colors[1], set1_colors[7], set1_colors[6]))
+  myfill <- scale_fill_manual(values = c(dark2_colors[3], dark2_colors[2], dark2_colors[1], dark2_colors[7], dark2_colors[6]))
   mytheme <- theme(plot.title = element_text(hjust = 0.5),
                    axis.title.x = element_blank(), 
                    legend.position = "top", 

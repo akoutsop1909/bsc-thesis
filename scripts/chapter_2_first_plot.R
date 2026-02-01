@@ -82,9 +82,9 @@ avg.demand <- function(df, type) {
 # =============================================================================
 plot1 <- function(df) {
   # Average yearly power demand by day
-  set1_colors <- brewer.pal(3, "Dark2")
+  dark2_colors <- brewer.pal(3, "Dark2")
   
-  myfill <- scale_fill_manual(values = c(set1_colors[2], set1_colors[3], set1_colors[1]))
+  myfill <- scale_fill_manual(values = c(dark2_colors[2], dark2_colors[3], dark2_colors[1]))
   mycolor <- scale_color_manual(values = c("black", "black", "black"))
   mytheme <- theme(plot.title = element_text(hjust = 0.5),
                    axis.title.x = element_blank(), 
