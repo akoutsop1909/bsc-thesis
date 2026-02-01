@@ -1,9 +1,9 @@
 # =============================================================================
 # Script to Convert Time Zones or Load Shifting Structure to PEV_L1 and PEV_L2 Structure
 # =============================================================================
-# This script takes a Time Zones or Load Shifting structure (which classifies
-# PEV power demand into four time zones) and converts it back to the original 
-# PEV_L1 and PEV_L2 charging profiles.
+# This script takes a Time Zones or Load Shifting structure (which categorizes
+# PEV power demand into time zones) and converts it back to the original PEV_L1 
+# and PEV_L2 charging profiles.
 #
 # The output CSV files (one for L1 and one for L2) include the following columns:
 # 'Time'        : Represents the 10-minute intervals (in "d/m/yyyy H:MM" format).
@@ -34,11 +34,11 @@ convert.to.pev_lx <- function(pev_df, tz_df, watt) {
   
   for (j in 2:ncol(pev_df)) { # Iterate over PEVs (columns)
     for (i in 1:nrow(pev_df)) { # Iterate over time slots (rows)
-      DateTime <- paste(tz_df$Date[k], tz_df$Start_Time[k])
+      Date_Time <- paste(tz_df$Charge_Date[k], tz_df$Start_Time[k])
       
       # First occurrence (start of a new charging session)
-      if (pev_df$Time[i] == DateTime) {
-        names(pev_df)[j] <- tz_df$HV_Code[k]
+      if (pev_df$Time[i] == Date_Time) {
+        names(pev_df)[j] <- tz_df$PEV_Code[k]
         pev_df[i,j] <- watt
         charge_progress <- charge_progress + 1
         
@@ -95,5 +95,5 @@ PEV_L2 <- convert.to.pev_lx(PEV_L2, TZ, 6600)
 
 # Export PEV_L1 and PEV_L2 Data Frames to CSV Format (adjust path as needed)
 # =============================================================================
-write.csv2(PEV_L1, "PEV_L1_01.csv", row.names = FALSE) # Path to export PEV_L1 file
-write.csv2(PEV_L2, "PEV_L2_01.csv", row.names = FALSE) # Path to export PEV_L2 file
+write.csv2(PEV_L1, "PEV_L1_00.csv", row.names = FALSE) # Path to export PEV_L1 file
+write.csv2(PEV_L2, "PEV_L2_00.csv", row.names = FALSE) # Path to export PEV_L2 file

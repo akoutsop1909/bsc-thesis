@@ -29,6 +29,7 @@ percentage <- "a1, b1, c1" # Set "a1, b1, c1" for Case 1 or "a1" for Case 2
 # Load Packages
 # =============================================================================
 library(ggplot2)
+library(RColorBrewer)
 library(lubridate)
 library(dplyr)
 
@@ -41,13 +42,16 @@ setwd("../data") # Path to the /data directory
 # Sums the kWh of all PEVs by time zone for L1 charges on Tuesday.
 #
 # Returns a data frame with the following columns:
-# 'Time_Zone' : The time zone (e.g., Peak, Off Peak, etc.).
+# 'Time_Zone' : The time zone (e.g., Peak, Off-Peak, etc.).
 # 'KWh'       : Total kWh for the specified time zone.
 # 'a1b1c1'    : The percentage parameter passed to the function.
 kwh.by.zone <- function(file, percentage) {
   df <- read.csv2(file, stringsAsFactors = FALSE)
   df %>%
-    mutate(Date = dmy(Date), Day = format(Date, "%a")) %>%
+    mutate(
+      Charge_Date = dmy(Charge_Date), 
+      Day = format(Charge_Date, "%a")
+      ) %>%
     filter(Charge_Type == "L1" & Day == "Tue") %>%
     group_by(Time_Zone) %>% 
     summarise(KWh = sum(KWh), .groups = "drop") %>% 
@@ -59,17 +63,17 @@ kwh.by.zone <- function(file, percentage) {
 # Returns a data frame with the following columns:
 # 'Time'   : Timestamp (in 10-minute intervals for the load-shifting week).
 # 'Demand' : Total power demand for each timestamp.
-# 'Type'   : Type of data ("Before load shifting", "After load shifting").
+# 'Type'   : Type of data ("Before Load Shifting", "After Load Shifting").
 demand <- function(file, type) {
   df <- read.csv2(file)
-  lower <- match(("4/1/2010 0:00"), df$Time)
-  upper <- match(("8/1/2010 23:50"), df$Time)
   
   df %>%
-    slice(lower:upper) %>%
-    mutate(Demand = rowSums(select(., -Time)),
-           Time = dmy_hm(Time), 
-           Type = type) %>%
+    mutate(
+      Demand = rowSums(select(., -Time)), 
+      Time = dmy_hm(Time), 
+      Type = type
+      ) %>%
+    filter(Time >= ymd_hm("2010-01-04 00:00") & Time <= ymd_hm("2010-01-08 23:50")) %>%
     select(Time, Demand, Type)
 }
 
@@ -78,17 +82,17 @@ demand <- function(file, type) {
 # Returns a data frame with the following columns:
 # 'Time'   : Timestamp (in 10-minute intervals on Tuesday).
 # 'Demand' : Total power demand for each timestamp.
-# 'Type'   : Type of data ("Before load shifting", "After load shifting").
+# 'Type'   : Type of data ("Before Load Shifting", "After Load Shifting").
 tue.demand <- function(file, type) {
   df <- read.csv2(file)
-  lower <- match(("4/1/2010 22:00"), df$Time)
-  upper <- match(("6/1/2010 6:50"), df$Time)
   
   df %>%
-    slice(lower:upper) %>%
-    mutate(Demand = rowSums(select(., -Time)),
-           Time = dmy_hm(Time),
-           Type = type) %>%
+    mutate(
+      Demand = rowSums(select(., -Time)), 
+      Time = dmy_hm(Time),
+      Type = type
+      ) %>%
+    filter(Time >= ymd_hm("2010-01-04 22:00") & Time <= ymd_hm("2010-01-06 6:50")) %>%
     select(Time, Demand, Type)
 }
 
@@ -96,7 +100,9 @@ tue.demand <- function(file, type) {
 # =============================================================================
 plot1 <- function(df, type) {
   # Case X: kWh per time zone for L1 charges on Tuesday"
-  mycolor <- scale_color_manual(values = c("slateblue4", "orangered2", "orchid3", "darkgoldenrod3"))
+  set1_colors <- brewer.pal(7, "Dark2")
+  
+  mycolor <- scale_color_manual(values = c(set1_colors[3], set1_colors[2], set1_colors[7], set1_colors[6]))
   mytheme <- theme(plot.title = element_text(hjust = 0.5),
                    legend.position = "top", 
                    legend.justification = "left",
@@ -105,7 +111,7 @@ plot1 <- function(df, type) {
                    legend.background = element_rect(colour = "black"))
   
   ggplot(df, aes(x = a1b1c1, y = KWh, color = Time_Zone, size = 4)) + geom_point() +
-    labs(color = "Time Zones:", x = type) +
+    labs(color = "Time Zone", x = type) +
     guides(colour = guide_legend(override.aes = list(size = 4))) +
     scale_size(guide = "none") +
     mycolor + mytheme
@@ -113,9 +119,14 @@ plot1 <- function(df, type) {
 
 plot2 <- function(df) {
   # Case X - Subcase Y: Weekly power demand with L1/L2 charging
-  mytimes <- c(dmy_hm("4/1/2010 7:00"), dmy_hm("4/1/2010 14:00"), dmy_hm("4/1/2010 20:00"), dmy_hm("4/1/2010 22:00"), dmy_hm("5/1/2010 7:00"), dmy_hm("5/1/2010 14:00"), dmy_hm("5/1/2010 20:00"), dmy_hm("5/1/2010 22:00"), dmy_hm("6/1/2010 7:00"), dmy_hm("6/1/2010 14:00"), dmy_hm("6/1/2010 20:00"), dmy_hm("6/1/2010 22:00"), dmy_hm("7/1/2010 7:00"), dmy_hm("7/1/2010 14:00"), dmy_hm("7/1/2010 20:00"), dmy_hm("7/1/2010 22:00"), dmy_hm("8/1/2010 7:00"), dmy_hm("8/1/2010 14:00"), dmy_hm("8/1/2010 20:00"), dmy_hm("8/1/2010 22:00"))
+  dates <- seq(dmy("4/1/2010"), dmy("8/1/2010"), by = "1 day")
+  hours <- c("7:00", "14:00", "20:00", "22:00")
+  date_str <- format(dates, "%d/%m/%Y")
+  set1_colors <- brewer.pal(3, "Dark2")
+  
+  mytimes <- dmy_hm(paste(rep(date_str, each = length(hours)), hours))
+  myfill <- scale_fill_manual(values = c(set1_colors[3], set1_colors[2]))
   mycolor <- scale_color_manual(values = c("black", "black", "black"))
-  myfill <- scale_fill_manual(values = c("slateblue4", "orangered2", "seagreen4"))
   mytheme <- theme(plot.title = element_text(hjust = 0.3),
                    axis.title.x = element_blank(), 
                    legend.position = "top", 
@@ -129,14 +140,16 @@ plot2 <- function(df) {
     geom_ribbon(aes(ymin = 0, ymax = Demand, fill = Type), alpha = .6) +
     geom_vline(xintercept = mytimes, linetype = "dashed", linewidth = 1) +
     scale_x_datetime(date_labels = "%a", breaks = "1 day") +
-    labs(y = "Demand (W)") +
+    labs(y = "Power Demand (W)") +
     myfill + mycolor + mytheme
 }
 
 plot3 <- function(df) {
   # Case X - Subcase Y: Daily power demand with L1/L2 charging
+  set1_colors <- brewer.pal(3, "Dark2")
+  
   mytimes <- c(dmy_hm("4/1/2010 22:00"), dmy_hm("5/1/2010 7:00"), dmy_hm("5/1/2010 14:00"), dmy_hm("5/1/2010 20:00"), dmy_hm("5/1/2010 22:00"), dmy_hm("6/1/2010 7:00"))
-  mycolor <- scale_color_manual(values = c("slateblue4", "orangered2", "orchid3", "darkgoldenrod3"))
+  mycolor <- scale_color_manual(values = c(set1_colors[3], set1_colors[2]))
   mytheme <- theme(plot.title = element_text(hjust = 0.5),
                    axis.title.x = element_blank(), 
                    legend.position = "top", 
@@ -147,15 +160,17 @@ plot3 <- function(df) {
   
   ggplot(df, aes(x = Time, y = Demand, color = Type)) +
     geom_line(size = 1) +
-    geom_vline(xintercept = mytimes, linetype = "dashed", size = 1) +
+    geom_vline(xintercept = mytimes, linetype = "dashed", linewidth = 1) +
     scale_x_datetime(date_labels = "%H:%M", breaks = "4 hours") +
-    labs(y = "Demand (W)") +
+    labs(y = "Power Demand (W)") +
     mycolor + mytheme
 }
 
 plot4 <- function(df, type) {
   # Energy saving for Case X
-  mycolor <- scale_color_manual(values = c("orangered2", "slateblue4"))
+  set1_colors <- brewer.pal(3, "Dark2")
+  
+  mycolor <- scale_color_manual(values = c(set1_colors[2], set1_colors[3]))
   mytheme <- theme(plot.title = element_text(hjust = 0.5),
                    legend.position = "top", 
                    legend.justification = "left",
@@ -183,63 +198,69 @@ LS <- rbind(TZ, LS01, LS02, LS03, LS04, LS05)
 
 # Calculate weekly power demand for all subcases
 # =============================================================================
-PEV_L1_00 <- demand(file.path("processed", "PEV_L1.csv"), "Before load shifting")
-PEV_L2_00 <- demand(file.path("processed", "PEV_L2.csv"), "Before load shifting")
+PEV_L1_00 <- demand(file.path("processed", "PEV_L1.csv"), "Before Load Shifting")
+PEV_L2_00 <- demand(file.path("processed", "PEV_L2.csv"), "Before Load Shifting")
 
-PEV_L1_01 <- demand(file.path("load_shifting", paste0("case", case), "PEV_L1_01.csv"), "After load shifting")
+PEV_L1_01 <- demand(file.path("load_shifting", paste0("case", case), "PEV_L1_01.csv"), "After Load Shifting")
 PEV_L1_01 <- rbind(PEV_L1_00, PEV_L1_01)
-PEV_L1_01$Type <- factor(PEV_L1_01$Type, levels = c("Before load shifting", "After load shifting"))
-PEV_L2_01 <- demand(file.path("load_shifting", paste0("case", case), "PEV_L2_01.csv"), "After load shifting")
+PEV_L1_01$Type <- factor(PEV_L1_01$Type, levels = c("Before Load Shifting", "After Load Shifting"))
+PEV_L2_01 <- demand(file.path("load_shifting", paste0("case", case), "PEV_L2_01.csv"), "After Load Shifting")
 PEV_L2_01 <- rbind(PEV_L2_00, PEV_L2_01)
-PEV_L2_01$Type <- factor(PEV_L2_01$Type, levels = c("Before load shifting", "After load shifting"))
+PEV_L2_01$Type <- factor(PEV_L2_01$Type, levels = c("Before Load Shifting", "After Load Shifting"))
 
-PEV_L1_02 <- demand(file.path("load_shifting", paste0("case", case), "PEV_L1_02.csv"), "After load shifting")
+PEV_L1_02 <- demand(file.path("load_shifting", paste0("case", case), "PEV_L1_02.csv"), "After Load Shifting")
 PEV_L1_02 <- rbind(PEV_L1_00, PEV_L1_02)
-PEV_L1_02$Type <- factor(PEV_L1_02$Type, levels = c("Before load shifting", "After load shifting"))
-PEV_L2_02 <- demand(file.path("load_shifting", paste0("case", case), "PEV_L2_02.csv"), "After load shifting")
+PEV_L1_02$Type <- factor(PEV_L1_02$Type, levels = c("Before Load Shifting", "After Load Shifting"))
+PEV_L2_02 <- demand(file.path("load_shifting", paste0("case", case), "PEV_L2_02.csv"), "After Load Shifting")
 PEV_L2_02 <- rbind(PEV_L2_00, PEV_L2_02)
-PEV_L2_02$Type <- factor(PEV_L2_02$Type, levels = c("Before load shifting", "After load shifting"))
+PEV_L2_02$Type <- factor(PEV_L2_02$Type, levels = c("Before Load Shifting", "After Load Shifting"))
 
-PEV_L1_03 <- demand(file.path("load_shifting", paste0("case", case), "PEV_L1_03.csv"), "After load shifting")
+PEV_L1_03 <- demand(file.path("load_shifting", paste0("case", case), "PEV_L1_03.csv"), "After Load Shifting")
 PEV_L1_03 <- rbind(PEV_L1_00, PEV_L1_03)
-PEV_L1_03$Type <- factor(PEV_L1_03$Type, levels = c("Before load shifting", "After load shifting"))
-PEV_L2_03 <- demand(file.path("load_shifting", paste0("case", case), "PEV_L2_03.csv"), "After load shifting")
+PEV_L1_03$Type <- factor(PEV_L1_03$Type, levels = c("Before Load Shifting", "After Load Shifting"))
+PEV_L2_03 <- demand(file.path("load_shifting", paste0("case", case), "PEV_L2_03.csv"), "After Load Shifting")
 PEV_L2_03 <- rbind(PEV_L2_00, PEV_L2_03)
-PEV_L2_03$Type <- factor(PEV_L2_03$Type, levels = c("Before load shifting", "After load shifting"))
+PEV_L2_03$Type <- factor(PEV_L2_03$Type, levels = c("Before Load Shifting", "After Load Shifting"))
 
-PEV_L1_04 <- demand(file.path("load_shifting", paste0("case", case), "PEV_L1_04.csv"), "After load shifting")
+PEV_L1_04 <- demand(file.path("load_shifting", paste0("case", case), "PEV_L1_04.csv"), "After Load Shifting")
 PEV_L1_04 <- rbind(PEV_L1_00, PEV_L1_04)
-PEV_L1_04$Type <- factor(PEV_L1_04$Type, levels = c("Before load shifting", "After load shifting"))
-PEV_L2_04 <- demand(file.path("load_shifting", paste0("case", case), "PEV_L2_04.csv"), "After load shifting")
+PEV_L1_04$Type <- factor(PEV_L1_04$Type, levels = c("Before Load Shifting", "After Load Shifting"))
+PEV_L2_04 <- demand(file.path("load_shifting", paste0("case", case), "PEV_L2_04.csv"), "After Load Shifting")
 PEV_L2_04 <- rbind(PEV_L2_00, PEV_L2_04)
-PEV_L2_04$Type <- factor(PEV_L2_04$Type, levels = c("Before load shifting", "After load shifting"))
+PEV_L2_04$Type <- factor(PEV_L2_04$Type, levels = c("Before Load Shifting", "After Load Shifting"))
 
-PEV_L1_05 <- demand(file.path("load_shifting", paste0("case", case), "PEV_L1_05.csv"), "After load shifting")
+PEV_L1_05 <- demand(file.path("load_shifting", paste0("case", case), "PEV_L1_05.csv"), "After Load Shifting")
 PEV_L1_05 <- rbind(PEV_L1_00, PEV_L1_05)
-PEV_L1_05$Type <- factor(PEV_L1_05$Type, levels = c("Before load shifting", "After load shifting"))
-PEV_L2_05 <- demand(file.path("load_shifting", paste0("case", case), "PEV_L2_05.csv"), "After load shifting")
+PEV_L1_05$Type <- factor(PEV_L1_05$Type, levels = c("Before Load Shifting", "After Load Shifting"))
+PEV_L2_05 <- demand(file.path("load_shifting", paste0("case", case), "PEV_L2_05.csv"), "After Load Shifting")
 PEV_L2_05 <- rbind(PEV_L2_00, PEV_L2_05)
-PEV_L2_05$Type <- factor(PEV_L2_05$Type, levels = c("Before load shifting", "After load shifting"))
+PEV_L2_05$Type <- factor(PEV_L2_05$Type, levels = c("Before Load Shifting", "After Load Shifting"))
 
 # Calculate total power demand on Tuesday for all subcases
 # =============================================================================
-Tue_PEV_L1_00 <- tue.demand(file.path("processed", "PEV_L1.csv"), "Before load shifting")
-Tue_PEV_L2_00 <- tue.demand(file.path("processed", "PEV_L2.csv"), "Before load shifting")
+Tue_PEV_L1_00 <- tue.demand(file.path("processed", "PEV_L1.csv"), "Before Load Shifting")
+Tue_PEV_L2_00 <- tue.demand(file.path("processed", "PEV_L2.csv"), "Before Load Shifting")
 
-Tue_PEV_L1_01 <- tue.demand(file.path("load_shifting", paste0("case", case), "PEV_L1_01.csv"), "After load shifting")
+Tue_PEV_L1_01 <- tue.demand(file.path("load_shifting", paste0("case", case), "PEV_L1_01.csv"), "After Load Shifting")
 Tue_PEV_L1_01 <- rbind(Tue_PEV_L1_00, Tue_PEV_L1_01)
-Tue_PEV_L2_01 <- tue.demand(file.path("load_shifting", paste0("case", case), "PEV_L2_01.csv"), "After load shifting")
+Tue_PEV_L1_01$Type <- factor(Tue_PEV_L1_01$Type, levels = c("Before Load Shifting", "After Load Shifting"))
+Tue_PEV_L2_01 <- tue.demand(file.path("load_shifting", paste0("case", case), "PEV_L2_01.csv"), "After Load Shifting")
 Tue_PEV_L2_01 <- rbind(Tue_PEV_L2_00, Tue_PEV_L2_01)
+Tue_PEV_L2_01$Type <- factor(Tue_PEV_L2_01$Type, levels = c("Before Load Shifting", "After Load Shifting"))
 
-Tue_PEV_L1_03 <- tue.demand(file.path("load_shifting", paste0("case", case), "PEV_L1_03.csv"), "After load shifting")
+Tue_PEV_L1_03 <- tue.demand(file.path("load_shifting", paste0("case", case), "PEV_L1_03.csv"), "After Load Shifting")
 Tue_PEV_L1_03 <- rbind(Tue_PEV_L1_00, Tue_PEV_L1_03)
-Tue_PEV_L2_03 <- tue.demand(file.path("load_shifting", paste0("case", case), "PEV_L2_03.csv"), "After load shifting")
+Tue_PEV_L1_03$Type <- factor(Tue_PEV_L1_03$Type, levels = c("Before Load Shifting", "After Load Shifting"))
+Tue_PEV_L2_03 <- tue.demand(file.path("load_shifting", paste0("case", case), "PEV_L2_03.csv"), "After Load Shifting")
 Tue_PEV_L2_03 <- rbind(Tue_PEV_L2_00, Tue_PEV_L2_03)
+Tue_PEV_L2_03$Type <- factor(Tue_PEV_L2_03$Type, levels = c("Before Load Shifting", "After Load Shifting"))
 
-Tue_PEV_L1_05 <- tue.demand(file.path("load_shifting", paste0("case", case), "PEV_L1_05.csv"), "After load shifting")
+Tue_PEV_L1_05 <- tue.demand(file.path("load_shifting", paste0("case", case), "PEV_L1_05.csv"), "After Load Shifting")
 Tue_PEV_L1_05 <- rbind(Tue_PEV_L1_00, Tue_PEV_L1_05)
-Tue_PEV_L2_05 <- tue.demand(file.path("load_shifting", paste0("case", case), "PEV_L2_05.csv"), "After load shifting")
+Tue_PEV_L1_05$Type <- factor(Tue_PEV_L1_05$Type, levels = c("Before Load Shifting", "After Load Shifting"))
+Tue_PEV_L2_05 <- tue.demand(file.path("load_shifting", paste0("case", case), "PEV_L2_05.csv"), "After Load Shifting")
 Tue_PEV_L2_05 <- rbind(Tue_PEV_L2_00, Tue_PEV_L2_05)
+Tue_PEV_L2_05$Type <- factor(Tue_PEV_L2_05$Type, levels = c("Before Load Shifting", "After Load Shifting"))
 
 # Import Enegry Saving Data
 # =============================================================================

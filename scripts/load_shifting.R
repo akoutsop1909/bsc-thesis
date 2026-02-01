@@ -7,7 +7,7 @@
 # place a migrated charge into an available slot in the target zone. If no valid 
 # slot is found, the 'Noise' column records the percentage of overlapping kWh 
 # with other charges from the same PEV.
-
+# 
 # Note: The Time Zones structure is created in the 'convert_to_time_zones.R' script.
 # After applying load shifting, the resulting CSV can be converted back to the 
 # PEV_L1 and PEV_L2 structures by running the 'convert_to_pev_l1_l2.R' script.
@@ -38,7 +38,7 @@ create.time.slots <- function(start_time, stop_time) {
   return(paste(hour(slots), format(slots,"%M"), sep = ":"))
 }
 
-# Samples from peak and redistributes the load to off peak, shoulder 1, and shoulder 2
+# Samples from peak and redistributes the load to off-peak, shoulder 1, and shoulder 2
 peak.sample.shifting <- function(df, dailyIndexes) {
   # Initialize index vectors for the different time zones
   peakIndexes <- c()
@@ -67,7 +67,7 @@ peak.sample.shifting <- function(df, dailyIndexes) {
   sampleData <- filter(df, Index %in% peakIndexes)
   totalKWH <- sum(sampleData$KWh) # Total kWh for sampled peak indexes
   
-  # Sample indexes for off peak from sampled peak indexes
+  # Sample indexes for off-peak from sampled peak indexes
   sampleKWH <- 0
   while (sampleKWH < totalKWH * d1 && length(peakIndexes) > 0) {
     sampleIndex <- sample(peakIndexes, size = 1)
@@ -91,14 +91,14 @@ peak.sample.shifting <- function(df, dailyIndexes) {
   shoulder2Indexes <- peakIndexes
   
   # Perform load shifting for each group
-  for (i in 1:length(offPeakIndexes)) df <- load.shifting(df, offPeakIndexes[i], "Off Peak")
+  for (i in 1:length(offPeakIndexes)) df <- load.shifting(df, offPeakIndexes[i], "Off-Peak")
   for (i in 1:length(shoulder1Indexes)) df <- load.shifting(df, shoulder1Indexes[i], "Shoulder 1")
   for (i in 1:length(shoulder2Indexes)) df <- load.shifting(df, shoulder2Indexes[i], "Shoulder 2")
   
   return(df)
 }
 
-# Samples from shoulder 1 and redistributes the load to off peak and shoulder 2
+# Samples from shoulder 1 and redistributes the load to off-peak and shoulder 2
 shoulder1.sample.shifting <- function(df, dailyIndexes) {
   # Initialize index vectors for the different time zones
   shoulder1Indexes <- c()
@@ -126,7 +126,7 @@ shoulder1.sample.shifting <- function(df, dailyIndexes) {
   sampleData <- filter(df, Index %in% shoulder1Indexes)
   totalKWH <- sum(sampleData$KWh) # Total kWh for sampled shoulder 1 indexes
   
-  # Sample indexes for off peak from sampled shoulder 1 indexes
+  # Sample indexes for off-peak from sampled shoulder 1 indexes
   sampleKWH <- 0
   while (sampleKWH < totalKWH * g1 && length(shoulder1Indexes) > 0) {
     sampleIndex <- sample(shoulder1Indexes, size = 1)
@@ -140,13 +140,13 @@ shoulder1.sample.shifting <- function(df, dailyIndexes) {
   shoulder2Indexes <- shoulder1Indexes
   
   # Perform load shifting for each group
-  for (i in 1:length(offPeakIndexes)) df <- load.shifting(df, offPeakIndexes[i], "Off Peak")
+  for (i in 1:length(offPeakIndexes)) df <- load.shifting(df, offPeakIndexes[i], "Off-Peak")
   for (i in 1:length(shoulder2Indexes)) df <- load.shifting(df, shoulder2Indexes[i], "Shoulder 2")
   
   return(df)
 }
 
-# Samples from shoulder 2 and redistributes the load to off peak
+# Samples from shoulder 2 and redistributes the load to off-peak
 shoulder2.sample.shifting <- function(df, dailyIndexes) {
   # Initialize index vectors for the different time zones
   shoulder2Indexes <- c()
@@ -169,11 +169,11 @@ shoulder2.sample.shifting <- function(df, dailyIndexes) {
     sampleKWH <- sampleKWH + df$KWh[sampleIndex]
   }
   
-  # The sampled shoulder 2 indexes are allocated to off peak
+  # The sampled shoulder 2 indexes are allocated to off-peak
   offPeakIndexes <- shoulder2Indexes
   
   # Perform load shifting for each group
-  for (i in 1:length(offPeakIndexes)) df <- load.shifting(df, offPeakIndexes[i], "Off Peak")
+  for (i in 1:length(offPeakIndexes)) df <- load.shifting(df, offPeakIndexes[i], "Off-Peak")
   
   return(df)
 }
@@ -185,13 +185,13 @@ load.shifting <- function(df, chargeIndex, targetZone) {
     return(df)
   }
   
-  # Exit early if the original time zone is already off peak
-  if (df$Time_Zone[chargeIndex] == "Off Peak") return(df)
+  # Exit early if the original time zone is already off-peak
+  if (df$Time_Zone[chargeIndex] == "Off-Peak") return(df)
   
   df$Time_Zone[chargeIndex] <- targetZone # Set the time zone
   
   # Filter same PEV charges in the target zone
-  samePEVCharges <- filter(df, Index != chargeIndex & Charge_Type == df$Charge_Type[chargeIndex] & Date == df$Date[chargeIndex] & HV_Code == df$HV_Code[chargeIndex] & Time_Zone == df$Time_Zone[chargeIndex])
+  samePEVCharges <- filter(df, Index != chargeIndex & Charge_Type == df$Charge_Type[chargeIndex] & Charge_Date == df$Charge_Date[chargeIndex] & PEV_Code == df$PEV_Code[chargeIndex] & Time_Zone == df$Time_Zone[chargeIndex])
   
   # Determine target slots based on the target zone
   if (targetZone == "Shoulder 1") targetSlots <- shoulder1Slots
@@ -202,7 +202,7 @@ load.shifting <- function(df, chargeIndex, targetZone) {
   if (targetZone == "Shoulder 2" && df$Charge_Duration[chargeIndex] > length(targetSlots)) {
     df$Start_Time[chargeIndex] <- targetSlots[1] # Set Start Time to the first slot
     df$Stop_Time[chargeIndex] <- targetSlots[length(targetSlots)] # Set Stop Time to the last slot
-    df$Splits[chargeIndex] <- TRUE # The charge will split
+    df$Spans_Zones[chargeIndex] <- TRUE # The charge will split
     
     # Calculate the remaining duration that doesn't fit into the target zone (shoulder 2)
     overflowDuration <- df$Charge_Duration[chargeIndex] - length(targetSlots)
@@ -224,15 +224,15 @@ load.shifting <- function(df, chargeIndex, targetZone) {
     # Add new row for the overflow charge
     newRowIndex <- max(df$Index) + 1 # Set the index for the new row
     df <- add_row(df, Index = newRowIndex, Charge_Type = df$Charge_Type[chargeIndex], 
-                  Date = df$Date[chargeIndex], HV_Code = df$HV_Code[chargeIndex], 
+                  Charge_Date = df$Charge_Date[chargeIndex], PEV_Code = df$PEV_Code[chargeIndex], 
                   Charge_Duration = overflowDuration, Start_Time = offPeakSlots[1],
-                  Stop_Time = offPeakSlots[overflowDuration], Time_Zone = "Off Peak", 
-                  DayType = "W", Splits = TRUE, KWh = kwh)
+                  Stop_Time = offPeakSlots[overflowDuration], Time_Zone = "Off-Peak", 
+                  Day_Type = "Weekday", Spans_Zones = TRUE, KWh = kwh)
     
-    # Filter same PEV charges in the target zone (off peak)
-    samePEVCharges <- filter(df, Index != newRowIndex & Charge_Type == df$Charge_Type[newRowIndex] & Date == df$Date[newRowIndex] & HV_Code == df$HV_Code[newRowIndex] & Time_Zone == df$Time_Zone[newRowIndex])
+    # Filter same PEV charges in the target zone (off-peak)
+    samePEVCharges <- filter(df, Index != newRowIndex & Charge_Type == df$Charge_Type[newRowIndex] & Charge_Date == df$Charge_Date[newRowIndex] & PEV_Code == df$PEV_Code[newRowIndex] & Time_Zone == df$Time_Zone[newRowIndex])
     
-    # Check for overlap with same PEV charges in the target zone (off peak)
+    # Check for overlap with same PEV charges in the target zone (off-peak)
     df$Noise[newRowIndex] <- overlap(samePEVCharges, df[newRowIndex, ], offPeakSlots)
     df$Noise[newRowIndex] <- df$Noise[newRowIndex] + spans.midnight.overlap(df, df[newRowIndex, ], offPeakSlots)
   }
@@ -255,7 +255,7 @@ load.shifting <- function(df, chargeIndex, targetZone) {
       
       # Check for overlap with same PEV charges in the target zone
       df$Noise[chargeIndex] <- overlap(samePEVCharges, df[chargeIndex, ], targetSlots)
-      if(targetZone == "Off Peak") df$Noise[chargeIndex] <- df$Noise[chargeIndex] + spans.midnight.overlap(df, df[chargeIndex, ], targetSlots)
+      if(targetZone == "Off-Peak") df$Noise[chargeIndex] <- df$Noise[chargeIndex] + spans.midnight.overlap(df, df[chargeIndex, ], targetSlots)
       
       # If there is no overlap, exit the loop
       if (df$Noise[chargeIndex] == 0) slotFound <- TRUE
@@ -312,11 +312,11 @@ spans.midnight.overlap <- function(df, migratedCharge, targetSlots) {
   migratedCharge$Stop_Time <- targetSlots[stopIndex]  # Stop at the original stop time
  
   # Increment date by 1 for the next day (post-midnight)
-  nextDay <- as.Date(migratedCharge$Date, format = "%d/%m/%Y") + 1
+  nextDay <- as.Date(migratedCharge$Charge_Date, format = "%d/%m/%Y") + 1
   nextDay <- sprintf("%d/%d/%d", day(nextDay), month(nextDay), year(nextDay))
   
   # Filter same PEV charges on the next day (post-midnight period)
-  samePEVCharges <- filter(df, Charge_Type == migratedCharge$Charge_Type & Date == nextDay & HV_Code == migratedCharge$HV_Code & Time_Zone == migratedCharge$Time_Zone)
+  samePEVCharges <- filter(df, Charge_Type == migratedCharge$Charge_Type & Charge_Date == nextDay & PEV_Code == migratedCharge$PEV_Code & Time_Zone == migratedCharge$Time_Zone)
   
   # Check for overlap with same PEV charges
   noise <- overlap(samePEVCharges, migratedCharge, targetSlots)
@@ -339,41 +339,41 @@ TZ <- TZ %>%
     Noise = 0
   ) %>%
   select(Index, everything())
-TZ_Sort <- TZ[order(dmy(TZ$Date)),]
+TZ_Sort <- TZ[order(dmy(TZ$Charge_Date)),]
 
 kwhBefore <- sum(TZ$KWh)
 
-# Filter Data by Time Zone, Charge Type, and DayType, then Split by Date
+# Filter Data by Time_Zone, Charge_Type, and Day_Type, then Split by Charge_Date
 # =============================================================================
-# Filter by Time Zone, Charge Type, and DayType (Weekday) where Splits is FALSE
-dailyPeak_L1 <- filter(TZ_Sort, Time_Zone == "Peak" & Charge_Type == "L1" & DayType == "W" & Splits == "FALSE")
-dailyPeak_L2 <- filter(TZ_Sort, Time_Zone == "Peak" & Charge_Type == "L2" & DayType == "W" & Splits == "FALSE")
+# Filter by Time_Zone, Charge_Type, and Day_Type (Weekday) where Spans_Zones is FALSE
+dailyPeak_L1 <- filter(TZ_Sort, Time_Zone == "Peak" & Charge_Type == "L1" & Day_Type == "Weekday" & Spans_Zones == "FALSE")
+dailyPeak_L2 <- filter(TZ_Sort, Time_Zone == "Peak" & Charge_Type == "L2" & Day_Type == "Weekday" & Spans_Zones == "FALSE")
 
-dailyShoulder1_L1 <- filter(TZ_Sort, Time_Zone == "Shoulder 1" & Charge_Type == "L1" & DayType == "W" & Splits == "FALSE")
-dailyShoulder1_L2 <- filter(TZ_Sort, Time_Zone == "Shoulder 1" & Charge_Type == "L2" & DayType == "W" & Splits == "FALSE")
+dailyShoulder1_L1 <- filter(TZ_Sort, Time_Zone == "Shoulder 1" & Charge_Type == "L1" & Day_Type == "Weekday" & Spans_Zones == "FALSE")
+dailyShoulder1_L2 <- filter(TZ_Sort, Time_Zone == "Shoulder 1" & Charge_Type == "L2" & Day_Type == "Weekday" & Spans_Zones == "FALSE")
 
-dailyShoulder2_L1 <- filter(TZ_Sort, Time_Zone == "Shoulder 2" & Charge_Type == "L1" & DayType == "W" & Splits == "FALSE")
-dailyShoulder2_L2 <- filter(TZ_Sort, Time_Zone == "Shoulder 2" & Charge_Type == "L2" & DayType == "W" & Splits == "FALSE")
+dailyShoulder2_L1 <- filter(TZ_Sort, Time_Zone == "Shoulder 2" & Charge_Type == "L1" & Day_Type == "Weekday" & Spans_Zones == "FALSE")
+dailyShoulder2_L2 <- filter(TZ_Sort, Time_Zone == "Shoulder 2" & Charge_Type == "L2" & Day_Type == "Weekday" & Spans_Zones == "FALSE")
 
 # == 
-# Split the filtered data by Date to create a list of daily subsets
-dailyPeak_L1 <- split(dailyPeak_L1, dailyPeak_L1$Date)
-dailyPeak_L2 <- split(dailyPeak_L2, dailyPeak_L2$Date)
+# Split the filtered data by Charge_Date to create a list of daily subsets
+dailyPeak_L1 <- split(dailyPeak_L1, dailyPeak_L1$Charge_Date)
+dailyPeak_L2 <- split(dailyPeak_L2, dailyPeak_L2$Charge_Date)
 
-dailyShoulder1_L1 <- split(dailyShoulder1_L1, dailyShoulder1_L1$Date)
-dailyShoulder1_L2 <- split(dailyShoulder1_L2, dailyShoulder1_L2$Date)
+dailyShoulder1_L1 <- split(dailyShoulder1_L1, dailyShoulder1_L1$Charge_Date)
+dailyShoulder1_L2 <- split(dailyShoulder1_L2, dailyShoulder1_L2$Charge_Date)
 
-dailyShoulder2_L1 <- split(dailyShoulder2_L1, dailyShoulder2_L1$Date)
-dailyShoulder2_L2 <- split(dailyShoulder2_L2, dailyShoulder2_L2$Date)
+dailyShoulder2_L1 <- split(dailyShoulder2_L1, dailyShoulder2_L1$Charge_Date)
+dailyShoulder2_L2 <- split(dailyShoulder2_L2, dailyShoulder2_L2$Charge_Date)
 
 # Initialize Parameters for Load Shifting Model (Global Variables)
 # =============================================================================
 a1 <- 0.1 # (Adjust as needed) percentage of kWh that will migrate from peak.
-d1 <- 0.5 # (Do not adjust)    percentage of a1 that will migrate to off peak.
+d1 <- 0.5 # (Do not adjust)    percentage of a1 that will migrate to off-peak.
 e1 <- 0.2 # (Do not adjust)    percentage of a1 that will migrate to Shoulder 1.
          # Note: the leftover  percentage of a1 will migrate to shoulder 2.
 b1 <- 0.1 # (Adjust as needed) percentage of kWh that will migrate from Shoulder 1.
-g1 <- 0.5 # (Do not adjust)    percentage of b1 that will migrate to off peak.
+g1 <- 0.5 # (Do not adjust)    percentage of b1 that will migrate to off-peak.
          # Note: the leftover  percentage of b1 will migrate to shoulder 2.
 c1 <- 0.1 # (Adjust as needed) percentage of kWh that will migrate from Shoulder 2.
 
@@ -429,7 +429,7 @@ if (kwhBefore == kwhAfter) {
 
 TZ <- TZ %>%
   select(-Index) %>%
-  arrange(Charge_Type, HV_Code, dmy(Date), hm(Start_Time))
+  arrange(Charge_Type, PEV_Code, dmy(Charge_Date), hm(Start_Time))
 
 # Calculate and print 'Noise' percentages (in kWh) for L1 and L2 charge types
 sum(TZ$Noise[TZ$Charge_Type %in% "L1"]) / sum(TZ$KWh[TZ$Charge_Type %in% "L1"]) * 100

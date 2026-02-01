@@ -1,16 +1,18 @@
 # =============================================================================
 # Script to Generate the Plots of Chapter 5 Exploring the Time Zones Structure
 # =============================================================================
-# This script explores the new Time Zones structure created after processing the
-# two CSV files containing PEV charging profiles (PEV_L1.csv and PEV_L2.csv).
-# This structure categorizes power demand into four time zones: Shoulder 1, Peak,
-# Shoulder 2, and Off Peak. The resulting bar plots visualize the number of 
-# charges per day and per week, grouped by time zone, to assess the uniformity of
-# of charging behavior.
+# This script explores the Time Zones structure created after processing the PEV 
+# charging profiles. It categorizes each weekday charge into one of four time 
+# zones: Shoulder 1 (7:00-13:50), Peak (14:00-19:50), Shoulder 2 (20:00-21:50), 
+# and Off-Peak (22:00-6:50). Weekend charges are categorized into two zones:
+# Shoulder (7:00-21:50) and Off-Peak (22:00-6:50). 
+# The resulting bar plots show the number of charges per day and per week, 
+# grouped by time zone, to assess the uniformity of charging behavior.
 
 # Load Packages
 # =============================================================================
 library(ggplot2)
+library(RColorBrewer)
 library(lubridate)
 library(dplyr)
 
@@ -21,8 +23,10 @@ setwd("../data") # Path to the /data directory
 # Prepare Plots
 # =============================================================================
 plot1 <- function(df, type) {
-  # Number of charges per day with L1/L2 charging grouped by time zone 
-  myfill <- scale_fill_manual(values = c("slateblue4", "orangered2", "seagreen4", "orchid3", "sienna2"))
+  # Number of L1/L2 charges per day by time zone
+  set1_colors <- brewer.pal(7, "Dark2")
+  
+  myfill <- scale_fill_manual(values = c(set1_colors[3], set1_colors[2], set1_colors[1], set1_colors[7], set1_colors[6]))
   mytheme <- theme(plot.title = element_text(hjust = 0.5),
                    axis.title.x = element_blank(), 
                    legend.position = "top", 
@@ -33,13 +37,16 @@ plot1 <- function(df, type) {
   
   df %>% filter(Charge_Type == type) %>% 
     ggplot(aes(x = Day, fill = Time_Zone)) + geom_bar() +
-    labs(fill = "Time Zones:") +
+    ylab("Charge Count") +
+    labs(fill = "Time Zone") +
     myfill + mytheme
 }
 
 plot2 <- function(df, type) {
-  # Number of charges per week with L1/L2 charging grouped by time zone
-  myfill <- scale_fill_manual(values = c("slateblue4", "orangered2", "seagreen4", "orchid3", "sienna2"))
+  # Number of L1/L2 charges per week by time zone
+  set1_colors <- brewer.pal(7, "Dark2")
+  
+  myfill <- scale_fill_manual(values = c(set1_colors[3], set1_colors[2], set1_colors[1], set1_colors[7], set1_colors[6]))
   mytheme <- theme(plot.title = element_text(hjust = 0.5),
                    axis.title.x = element_blank(), 
                    legend.position = "top", 
@@ -50,14 +57,17 @@ plot2 <- function(df, type) {
   
   df %>% filter(Charge_Type == type & (Month == "January" | Month == "March" | Month == "August")) %>% 
     ggplot(aes(x = Week, fill = Time_Zone)) + geom_bar() +
-    facet_grid(. ~ Month) +
-    labs(fill = "Time Zones:") +
+    ylab("Charge Count") +
+    facet_wrap(~ Month, scales = "free_x") +
+    labs(fill = "Time Zone") +
     myfill + mytheme
 }
 
 plot3 <- function(df, type) {
-  # Number of charges per week with L1/L2 charging grouped by time zone (proportions)
-  myfill <- scale_fill_manual(values = c("slateblue4", "orangered2", "seagreen4", "orchid3", "sienna2"))
+  # Number of L1/L2 charges per week by time zone (proportions)
+  set1_colors <- brewer.pal(7, "Dark2")
+  
+  myfill <- scale_fill_manual(values = c(set1_colors[3], set1_colors[2], set1_colors[1], set1_colors[7], set1_colors[6]))
   mytheme <- theme(plot.title = element_text(hjust = 0.5),
                    axis.title.x = element_blank(), 
                    legend.position = "top", 
@@ -68,9 +78,9 @@ plot3 <- function(df, type) {
   
   df %>% filter(Charge_Type == type & (Month == "January" | Month == "March" | Month == "August")) %>% 
     ggplot(aes(x = Week, fill = Time_Zone)) + geom_bar(position = "fill") + 
-    ylab("proportions") +
-    facet_grid(. ~ Month) +
-    labs(fill = "Time Zones:") +
+    ylab("Proportions") +
+    facet_wrap(~ Month, scales = "free_x") +
+    labs(fill = "Time Zone") +
     myfill + mytheme
 }
 
@@ -79,21 +89,21 @@ plot3 <- function(df, type) {
 TZ <- read.csv2(file.path("time_zones", "TimeZones_full.csv"), stringsAsFactors = FALSE) # Use "TimeZones_full.csv" for full data
 TZ <- TZ %>%
   mutate(
-    Date = dmy(Date),
-    Day = factor(format(Date, "%a"), levels = c("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")),
-    Month = factor(format(Date, "%B"), levels = month.name),
-    Week = paste("Week", as.integer((day(Date) - 1) / 7) + 1, sep = " ") # Group days into weeks
+    Charge_Date = dmy(Charge_Date),
+    Day = factor(format(Charge_Date, "%a"), levels = c("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")),
+    Month = factor(format(Charge_Date, "%B"), levels = month.name),
+    Week = paste("Week", ceiling(day(Charge_Date) / 7)) # Group days into weeks
   )
 
 # Display Plots
 # =============================================================================
-plot1(TZ, "L1") # Number of charges per day with L1 charging grouped by time zone 
-plot1(TZ, "L2") # Number of charges per day with L2 charging grouped by time zone 
+plot1(TZ, "L1") # Number of L1 charges per day by time zone
+plot1(TZ, "L2") # Number of L2 charges per day by time zone
 
 # == 
-plot2(TZ, "L1") # Number of charges per week with L1 charging grouped by time zone
-plot2(TZ, "L2") # Number of charges per week with L2 charging grouped by time zone
+plot2(TZ, "L1") # Number of L1 charges per week by time zone
+plot2(TZ, "L2") # Number of L2 charges per week by time zone
 
 # == 
-plot3(TZ, "L1") # Number of charges per week with L1 charging grouped by time zone (proportions)
-plot3(TZ, "L2") # Number of charges per week with L2 charging grouped by time zone (proportions)
+plot3(TZ, "L1") # Number of L1 charges per week by time zone (proportions)
+plot3(TZ, "L2") # Number of L2 charges per week by time zone (proportions)

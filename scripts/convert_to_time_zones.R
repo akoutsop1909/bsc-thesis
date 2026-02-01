@@ -1,22 +1,23 @@
 # =============================================================================
 # Script to Convert PEV_L1 and PEV_L2 Structure to Time Zones Structure
 # =============================================================================
-# This script creates the new Time Zones structure by processing the two CSV
-# files containing PEV charging profiles (PEV_L1.csv and PEV_L2.csv). The 
-# structure classifies power demand into four time zones: Shoulder 1, Peak, 
-# Shoulder 2, and Off Peak.
+# This script creates the Time Zones structure by processing the PEV charging 
+# profiles. It categorizes each weekday charge into one of four time zones: 
+# Shoulder 1 (7:00-13:50), Peak (14:00-19:50), Shoulder 2 (20:00-21:50), and 
+# Off-Peak (22:00-6:50). Weekend charges are categorized into two zones:
+# Shoulder (7:00-21:50) and Off-Peak (22:00-6:50). 
 #
 # The output CSV file includes the following columns:
-# 'Charge_Type'     : (Character) Type of charging level ("L1", "L2")
-# 'Date'            : (Character) Date of charging (in d/m/yyyy format, e.g., "5/1/2010")
-# 'HV_Code'         : (Character) PEV code (e.g., "H001.V001")
-# 'Charge_Duration' : (Integer)   Duration of charging (in 10-minute time slots).
-# 'Start_Time'      : (Character) Start time of charging session (in H:MM format).
-# 'Stop_Time'       : (Character) Stop time of charging session (in H:MM format).
-# 'Time_Zone'       : (Character) Classification of charging time into a zone (e.g., "Shoulder 1", "Peak").
-# 'DayType'         : (Character) Indicates whether the day is a weekday ("W") or weekend ("H").
-# 'KWh'             : (Numeric)   Energy consumed during charging session, in kilowatt-hours (kWh). 
-# 'Splits'          : (Logical)   Indicates whether the charging session spans more than one time zone. 
+# 'Charge_Type'     : (Character) Charging type/level ("L1" or "L2")
+# 'Charge_Date'     : (Character) Date of charging (d/m/yyyy, e.g., "5/1/2010")
+# 'Day_Type'        : (Character) Day type ("Weekday" or "Weekend").
+# 'PEV_Code'        : (Character) Vehicle identifier including household info (e.g., "H001.V001")
+# 'Charge_Duration' : (Integer)   Duration of charging in 10-minute slots.
+# 'Start_Time'      : (Character) Start time of charging session (H:MM).
+# 'Stop_Time'       : (Character) Stop time of charging session (H:MM).
+# 'Time_Zone'       : (Character) Time zone classification (e.g., "Shoulder 1", "Peak").
+# 'KWh'             : (Numeric)   Energy consumed during session (kWh). 
+# 'Spans_Zones'     : (Logical)   TRUE if session spans more than one time zone. 
 
 # Load Packages
 # =============================================================================
@@ -44,8 +45,8 @@ should.split.charge <- function(df, i, weekdayTimeZones, weekendTimeZones) {
   nextChargeTime <- paste(hour(df$Time[i+1]), format(df$Time[i+1], "%M"), sep = ":")
   
   # Check if the next charge time falls within the weekday or weekend time zone boundaries
-  shouldSplitWeekday <- (df$DayType[i+1] == "W") && (nextChargeTime %in% weekdayTimeZones)
-  shouldSplitWeekend <- (df$DayType[i+1] == "H") && (nextChargeTime %in% weekendTimeZones)
+  shouldSplitWeekday <- (df$Day_Type[i+1] == "Weekday") && (nextChargeTime %in% weekdayTimeZones)
+  shouldSplitWeekend <- (df$Day_Type[i+1] == "Weekend") && (nextChargeTime %in% weekendTimeZones)
   
   return(shouldSplitWeekday | shouldSplitWeekend)
 }
@@ -56,9 +57,9 @@ convert.to.time.zones <- function(file, watt, type) {
   df <- df %>%
     mutate(
       Time = dmy_hm(Time),
-      DayType = case_when(
-        format(Time, "%a") %in% c("Mon", "Tue", "Wed", "Thu", "Fri") ~ "W",  # Weekdays: "W"
-        format(Time, "%a") %in% c("Sat", "Sun") ~ "H",  # Weekends: "H"
+      Day_Type = case_when(
+        format(Time, "%a") %in% c("Mon", "Tue", "Wed", "Thu", "Fri") ~ "Weekday",
+        format(Time, "%a") %in% c("Sat", "Sun") ~ "Weekend",
       )
     )
   
@@ -71,12 +72,12 @@ convert.to.time.zones <- function(file, watt, type) {
   weekendTimeZones <- c("7:00", "22:00")  # Weekend Time Zones: Shoulder, Off Peak
   
   # Initialize vectors for charging details
-  HV_Code <- NA         # (Character): PEV code (e.g., "H001.V001").
-  Date <- NA            # (Character): Date of charging (in d/m/yyyy format, e.g., "5/1/2010").
-  Charge_Duration <- NA # (Integer)  : Duration of charging (in 10-minute time slots).
-  Start_Time <- NA      # (Character): Start time of charging session (in H:MM format).
-  Stop_Time <- NA       # (Character): Stop time of charging session (in H:MM format).
-  DayType <- NA         # (Character): Indicates whether the day is a weekday ("W") or weekend ("H").
+  Charge_Date <- NA     # (Character): Date of charging (d/m/yyyy, e.g., "5/1/2010").
+  Day_Type <- NA        # (Character): Day type ("Weekday" or "Weekend").
+  PEV_Code <- NA        # (Character): Vehicle identifier including household info (e.g., "H001.V001").
+  Charge_Duration <- NA # (Integer)  : Duration of charging in 10-minute slots.
+  Start_Time <- NA      # (Character): Start time of charging session (H:MM).
+  Stop_Time <- NA       # (Character): Stop time of charging session (H:MM).
   
   # Initialize variables for loop control
   duration <- 0         # (Integer)  : Tracks the ongoing charging duration.
@@ -87,10 +88,10 @@ convert.to.time.zones <- function(file, watt, type) {
       
       # First occurrence (start of a new charging session)
       if (df[i,j] == watt && duration == 0) {
-        HV_Code[k] <- names(df)[j]
-        Date[k] <- paste(day(df$Time[i]), month(df$Time[i]), year(df$Time[i]), sep = "/")
+        PEV_Code[k] <- names(df)[j]
+        Charge_Date[k] <- paste(day(df$Time[i]), month(df$Time[i]), year(df$Time[i]), sep = "/")
         Start_Time[k] <- paste(hour(df$Time[i]), format(df$Time[i],"%M"), sep = ":")
-        DayType[k] <- df$DayType[i]
+        Day_Type[k] <- df$Day_Type[i]
         
         duration <- 1
         
@@ -135,7 +136,7 @@ convert.to.time.zones <- function(file, watt, type) {
   Charge_Type <- rep(type, k-1)
   KWh <- (Charge_Duration/6) * (watt/1000)
   
-  TZ_LX <- data.frame(Charge_Type, Date, HV_Code, Charge_Duration, Start_Time, Stop_Time, DayType, KWh, stringsAsFactors = FALSE)
+  TZ_LX <- data.frame(Charge_Type, Charge_Date, Day_Type, PEV_Code, Charge_Duration, Start_Time, Stop_Time, KWh, stringsAsFactors = FALSE)
   return(TZ_LX)
 }
 
@@ -146,27 +147,27 @@ TZ_L2 <- convert.to.time.zones(file.path("processed", "PEV_L2.csv"), 6600, "L2")
 
 TZ <- rbind (TZ_L1, TZ_L2)
 TZ$Time_Zone <- NA
-TZ <- TZ[, c(colnames(TZ)[1:6], "Time_Zone", "DayType", "KWh")]
+TZ <- relocate(TZ, Time_Zone, .before = KWh)
 
-# Check for charge splits based on stop and start times crossing time zones
+# Check if charges span more than one time zones based on stop and start times
 # =============================================================================
-TZ$Splits <- FALSE
+TZ$Spans_Zones <- FALSE
 
-beforeSplitTimes <- c("6:50", "13:50", "19:50", "21:50")
-splitTimes <- c("7:00", "14:00", "20:00", "22:00")
+ZoneStartTimes <- c("7:00", "14:00", "20:00", "22:00")
+ZoneEndTimes <- c("13:50", "19:50", "21:50", "6:50")
 
 for(i in 2:nrow(TZ)) {
-  if (TZ$Date[i] == TZ$Date[i-1]) {
-    if (TZ$Stop_Time[i-1] %in% beforeSplitTimes & TZ$Start_Time[i] %in% splitTimes) {
-      TZ$Splits[i-1] <- TRUE
-      TZ$Splits[i] <- TRUE
+  if (TZ$Charge_Date[i] == TZ$Charge_Date[i-1]) {
+    if (TZ$Stop_Time[i-1] %in% ZoneEndTimes && TZ$Start_Time[i] %in% ZoneStartTimes) {
+      TZ$Spans_Zones[i-1] <- TRUE
+      TZ$Spans_Zones[i] <- TRUE
     }
   }
 }
 
-# Calculate and print the percentage of splits for L1 and L2 charge types
-sum(TZ$Splits[TZ$Charge_Type == "L1"]) / sum(TZ$Charge_Type == "L1") * 100
-sum(TZ$Splits[TZ$Charge_Type == "L2"]) / sum(TZ$Charge_Type == "L2") * 100
+# Calculate and print the percentage of charges than span zones for L1 and L2 charge types
+sum(TZ$Spans_Zones[TZ$Charge_Type == "L1"]) / sum(TZ$Charge_Type == "L1") * 100
+sum(TZ$Spans_Zones[TZ$Charge_Type == "L2"]) / sum(TZ$Charge_Type == "L2") * 100
 
 # Create time zone slots and fill Time_Zone column
 # =============================================================================
@@ -179,15 +180,15 @@ weekendShoulder <- create.time.slots("7:00", "21:50")
 TZ <- TZ %>%
   mutate(
     Time_Zone = case_when(
-      # Weekdays (W)
-      DayType == "W" & Start_Time %in% weekdayShoulder1 ~ "Shoulder 1",
-      DayType == "W" & Start_Time %in% weekdayPeak ~ "Peak",
-      DayType == "W" & Start_Time %in% weekdayShoulder2 ~ "Shoulder 2",
-      DayType == "W" ~ "Off Peak",
+      # Weekdays
+      Day_Type == "Weekday" & Start_Time %in% weekdayShoulder1 ~ "Shoulder 1",
+      Day_Type == "Weekday" & Start_Time %in% weekdayPeak ~ "Peak",
+      Day_Type == "Weekday" & Start_Time %in% weekdayShoulder2 ~ "Shoulder 2",
+      Day_Type == "Weekday" ~ "Off-Peak",
       
-      # Weekends (H)
-      DayType == "H" & Start_Time %in% weekendShoulder ~ "Shoulder",
-      DayType == "H" ~ "Off Peak"
+      # Weekends
+      Day_Type == "Weekend" & Start_Time %in% weekendShoulder ~ "Shoulder",
+      Day_Type == "Weekend" ~ "Off-Peak"
     )
   )
 
