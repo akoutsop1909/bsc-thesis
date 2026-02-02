@@ -79,18 +79,22 @@ All datasets are complete with no missing values for any time interval.
 * **PEV column names:** Each label corresponds to a unique household-vehicle combination. For example, `H001.V001` refers to **Vehicle 1 (V001)** in **Household 1 (H001)**. This naming pattern applies to all 348 vehicles.
 * **PEV charging:** A value of **zero** means the vehicle is **not charging** at that time, while any **non-zero** value (1920 for Level 1 or 6600 for Level 2) indicates the charging power in watts.
 * **Charging types:** **Level 1** (L1) charging uses a standard 120V household outlet and consumes **1920 W**, making it the slowest and most affordable option. **Level 2** (L2) charging uses a 240V outlet and consumes **6600 W**. It is faster than Level 1 but more expensive and requires special equipment to connect to the 240V outlet.
-* **Spans_Zones**: This column in **Time Zones** indicates whether the charging session **spans more than one zone** (e.g., starts in Shoulder 1 and stops in Peak). If so, the value is `TRUE`; otherwise, it is false `FALSE`, meaning the entire session occurs within a single zone.
+* **Spans_Zones**: This column in **Time Zones** indicates whether the charging session **spans more than one zone** (e.g., starts in Shoulder 1 and stops in Peak). If so, the value is `TRUE`; otherwise, it is `FALSE`, meaning the entire session occurs within a single zone.
 
 ## 🚀 Getting Started
 Clone this repository to your local machine following the [instructions from GitHub](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository). Inside, you will find the **/data** and **/scripts** folders: 
 * The **/data** folder contains:
-  * The **processed** datasets used in the research, including household electricity demand and PEV charging profiles (L1 and L2).
-  * The **Time Zones** structure.
-  * The datasets generated after applying **load shifting** (a technique that migrates a percentage of PEV charging from peak to off-peak hours to help balance grid load) on the Time Zones structure. These cover two main cases, each with five subcases that vary the percentage of load shifted between time zones.
-* The **/scripts** folder contains the necessary **R scripts**, organized by task, covering data analysis, data conversion, and simulation.
+  * The **processed** datasets used in the research, including household electricity demand (**Household.csv**) and PEV charging profiles (**PEV_L1.csv** and **PEV_L2.csv**).
+  * The **Time Zones** data, including the full yearly dataset (**TimeZones_full.csv**) and a subset of one week from January (**TimeZones.csv**).
+  * Datasets generated after applying **load shifting** (a technique that shifts a percentage of PEV charges from peak to off-peak hours to balance grid load) on the Time Zones data. These datasets cover two main simulation cases, each with five subcases that vary the percentage of kWh shifted between zones.
+* The **/scripts** folder contains the necessary **R scripts** for data processing, analysis, and simulation.
 
 ### Running the Scripts
-Each script begins with useful instructuons, package loading, and current working directory setup. Before running the scripts, you must adjust the  path in the `setwd()` function to match the location of your cloned repository and data files. For example:
+Each script begins with helpful instructions, package loading, and setting the current working directory, which should point to the **/data** folder. They are configured to load the data, but you can modify the paths if needed. Depending on the task, a script will either process and save the data as `.csv` files to the specified directory or create visualizations, which you can view directly in your R IDE's plot window or save to your desired location. 
+
+<p align="center">
+  <b>⚠️The rest of the readme is under construction⚠️</b>
+</p>
 
 ### 1. **First plot and Exploratory Data Analysis (EDA)**
 
