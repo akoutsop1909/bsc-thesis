@@ -1,12 +1,12 @@
 # =============================================================================
-# Script to Perform Load Shifting on a Time Zones Structure
+# Script to apply Load Shifting on a Time Zones Structure
 # =============================================================================
-# This script performs load shifting on a Time Zones structure, with adjustable
-# parameters (a1, b1, c1) that control the percentage of load shifted between 
-# different time zones. The model attempts up to a specified number of times to 
-# place a migrated charge into an available slot in the target zone. If no valid 
-# slot is found, the 'Noise' column records the percentage of overlapping kWh 
-# with other charges from the same PEV.
+# This script applies load shifting on a Time Zones structure, with adjustable
+# parameters (a1, b1, c1) that control the percentage of kWh shifted between 
+# zones. The model attempts up to a specified number of times to place a shifted
+# charge into an available slot in the target zone. If no valid  slot is found, 
+# the 'Noise' column records the percentage of overlapping kWh with other charges 
+# from the same PEV.
 # 
 # Note: The Time Zones structure is created in the 'convert_to_time_zones.R' script.
 # After applying load shifting, the resulting CSV can be converted back to the 
@@ -38,7 +38,7 @@ create.time.slots <- function(start_time, stop_time) {
   return(paste(hour(slots), format(slots,"%M"), sep = ":"))
 }
 
-# Samples from peak and redistributes the load to off-peak, shoulder 1, and shoulder 2
+# Samples from peak and shifts to off-peak, shoulder 1, and shoulder 2
 peak.sample.shifting <- function(df, dailyIndexes) {
   # Initialize index vectors for the different time zones
   peakIndexes <- c()
@@ -90,7 +90,7 @@ peak.sample.shifting <- function(df, dailyIndexes) {
   # The remaining sampled peak indexes are allocated to shoulder 2
   shoulder2Indexes <- peakIndexes
   
-  # Perform load shifting for each group
+  # Apply load shifting to each group
   for (i in 1:length(offPeakIndexes)) df <- load.shifting(df, offPeakIndexes[i], "Off-Peak")
   for (i in 1:length(shoulder1Indexes)) df <- load.shifting(df, shoulder1Indexes[i], "Shoulder 1")
   for (i in 1:length(shoulder2Indexes)) df <- load.shifting(df, shoulder2Indexes[i], "Shoulder 2")
@@ -98,7 +98,7 @@ peak.sample.shifting <- function(df, dailyIndexes) {
   return(df)
 }
 
-# Samples from shoulder 1 and redistributes the load to off-peak and shoulder 2
+# Samples from shoulder 1 and shifts to off-peak and shoulder 2
 shoulder1.sample.shifting <- function(df, dailyIndexes) {
   # Initialize index vectors for the different time zones
   shoulder1Indexes <- c()
@@ -139,14 +139,14 @@ shoulder1.sample.shifting <- function(df, dailyIndexes) {
   # The remaining sampled shoulder 1 indexes are allocated to shoulder 2
   shoulder2Indexes <- shoulder1Indexes
   
-  # Perform load shifting for each group
+  # Apply load shifting to each group
   for (i in 1:length(offPeakIndexes)) df <- load.shifting(df, offPeakIndexes[i], "Off-Peak")
   for (i in 1:length(shoulder2Indexes)) df <- load.shifting(df, shoulder2Indexes[i], "Shoulder 2")
   
   return(df)
 }
 
-# Samples from shoulder 2 and redistributes the load to off-peak
+# Samples from shoulder 2 and shifts to off-peak
 shoulder2.sample.shifting <- function(df, dailyIndexes) {
   # Initialize index vectors for the different time zones
   shoulder2Indexes <- c()
@@ -172,13 +172,13 @@ shoulder2.sample.shifting <- function(df, dailyIndexes) {
   # The sampled shoulder 2 indexes are allocated to off-peak
   offPeakIndexes <- shoulder2Indexes
   
-  # Perform load shifting for each group
+  # Apply load shifting to each group
   for (i in 1:length(offPeakIndexes)) df <- load.shifting(df, offPeakIndexes[i], "Off-Peak")
   
   return(df)
 }
 
-# Migrates a charge to the target zone
+# Shifts a charge to the target zone
 load.shifting <- function(df, chargeIndex, targetZone) {
   # Exit if chargeIndex is empty, NULL, NA, or out of bounds
   if (is.null(chargeIndex) || length(chargeIndex) == 0 || is.na(chargeIndex) || chargeIndex < 1 || chargeIndex > nrow(df)) {
@@ -264,15 +264,15 @@ load.shifting <- function(df, chargeIndex, targetZone) {
   return(df)
 }
 
-# Checks for overlap between the migrated charge and other charges of the same PEV in the target zone
-overlap <- function(samePEVCharges, migratedCharge, targetSlots) {
+# Checks for overlap between the shifted charge and other charges of the same PEV in the target zone
+overlap <- function(samePEVCharges, shiftedCharge, targetSlots) {
   # If there are no charges of the same PEV in the target zone, return 0 (no overlap)
   if (nrow(samePEVCharges) == 0) return (0)
   
-  # Find the position of the migrated charge in the targetSlots
-  startIndex <- match(migratedCharge$Start_Time, targetSlots)
-  stopIndex <- match(migratedCharge$Stop_Time, targetSlots)
-  migratedChargeSlots <- targetSlots[startIndex:stopIndex]
+  # Find the position of the shifted charge in targetSlots
+  startIndex <- match(shiftedCharge$Start_Time, targetSlots)
+  stopIndex <- match(shiftedCharge$Stop_Time, targetSlots)
+  shiftedChargeSlots <- targetSlots[startIndex:stopIndex]
   
   # Loop over the other charges of the same PEV and check for overlap
   for (i in 1:nrow(samePEVCharges)) {
@@ -282,11 +282,11 @@ overlap <- function(samePEVCharges, migratedCharge, targetSlots) {
     otherChargeSlots <- targetSlots[startIndex:stopIndex]
     
     # Calculate noise based on charge type
-    if (migratedCharge$Charge_Type == "L1") {
-      noise <- (length(intersect(migratedChargeSlots, otherChargeSlots)) / 6) * 1.92
+    if (shiftedCharge$Charge_Type == "L1") {
+      noise <- (length(intersect(shiftedChargeSlots, otherChargeSlots)) / 6) * 1.92
     }
     else {
-      noise <- (length(intersect(migratedChargeSlots, otherChargeSlots)) / 6) * 6.6
+      noise <- (length(intersect(shiftedChargeSlots, otherChargeSlots)) / 6) * 6.6
     }
     
     if (noise > 0) return (noise) # Return noise if overlap is detected
@@ -295,31 +295,31 @@ overlap <- function(samePEVCharges, migratedCharge, targetSlots) {
 }
 
 # Checks for overlap with same PEV charges that span midnight and affect the next day
-spans.midnight.overlap <- function(df, migratedCharge, targetSlots) {
+spans.midnight.overlap <- function(df, shiftedCharge, targetSlots) {
   midnightIndex <- match("0:00", targetSlots) # Index of midnight (00:00)
   
-  # Find the position of the migrated charge in the targetSlots
-  startIndex <- match(migratedCharge$Start_Time, targetSlots)
-  stopIndex <- match(migratedCharge$Stop_Time, targetSlots)
+  # Find the position of the shifted charge in targetSlots
+  startIndex <- match(shiftedCharge$Start_Time, targetSlots)
+  stopIndex <- match(shiftedCharge$Stop_Time, targetSlots)
   
   # If the charge doesn't span midnight, return 0 (no overlap)
   if (startIndex >= midnightIndex || stopIndex < midnightIndex) {
     return(0)
   }
   
-  # Adjust the migrated charge's start and stop time to reflect the post-midnight period
-  migratedCharge$Start_Time <- targetSlots[midnightIndex]  # Start at midnight
-  migratedCharge$Stop_Time <- targetSlots[stopIndex]  # Stop at the original stop time
+  # Adjust the shifted charge's start and stop time to reflect the post-midnight period
+  shiftedCharge$Start_Time <- targetSlots[midnightIndex]  # Start at midnight
+  shiftedCharge$Stop_Time <- targetSlots[stopIndex]  # Stop at the original stop time
  
   # Increment date by 1 for the next day (post-midnight)
-  nextDay <- as.Date(migratedCharge$Charge_Date, format = "%d/%m/%Y") + 1
+  nextDay <- as.Date(shiftedCharge$Charge_Date, format = "%d/%m/%Y") + 1
   nextDay <- sprintf("%d/%d/%d", day(nextDay), month(nextDay), year(nextDay))
   
   # Filter same PEV charges on the next day (post-midnight period)
-  samePEVCharges <- filter(df, Charge_Type == migratedCharge$Charge_Type & Charge_Date == nextDay & PEV_Code == migratedCharge$PEV_Code & Time_Zone == migratedCharge$Time_Zone)
+  samePEVCharges <- filter(df, Charge_Type == shiftedCharge$Charge_Type & Charge_Date == nextDay & PEV_Code == shiftedCharge$PEV_Code & Time_Zone == shiftedCharge$Time_Zone)
   
   # Check for overlap with same PEV charges
-  noise <- overlap(samePEVCharges, migratedCharge, targetSlots)
+  noise <- overlap(samePEVCharges, shiftedCharge, targetSlots)
   return (noise)
 }
 
@@ -368,14 +368,15 @@ dailyShoulder2_L2 <- split(dailyShoulder2_L2, dailyShoulder2_L2$Charge_Date)
 
 # Initialize Parameters for Load Shifting Model (Global Variables)
 # =============================================================================
-a1 <- 0.1 # (Adjust as needed) percentage of kWh that will migrate from peak.
-d1 <- 0.5 # (Do not adjust)    percentage of a1 that will migrate to off-peak.
-e1 <- 0.2 # (Do not adjust)    percentage of a1 that will migrate to Shoulder 1.
-         # Note: the leftover  percentage of a1 will migrate to shoulder 2.
-b1 <- 0.1 # (Adjust as needed) percentage of kWh that will migrate from Shoulder 1.
-g1 <- 0.5 # (Do not adjust)    percentage of b1 that will migrate to off-peak.
-         # Note: the leftover  percentage of b1 will migrate to shoulder 2.
-c1 <- 0.1 # (Adjust as needed) percentage of kWh that will migrate from Shoulder 2.
+a1 <- 0.1 # (Adjust as needed) percentage of kWh to sample from peak.
+d1 <- 0.5 # (Do not adjust)    percentage of a1 to shift to off-peak.
+e1 <- 0.2 # (Do not adjust)    percentage of a1 to shift to Shoulder 1.
+         # Note: the leftover  percentage of a1 will shift to shoulder 2.
+b1 <- 0.1 # (Adjust as needed) percentage of kWh to sample from Shoulder 1.
+g1 <- 0.5 # (Do not adjust)    percentage of b1 to shift to off-peak.
+         # Note: the leftover  percentage of b1 will shift to shoulder 2.
+c1 <- 0.1 # (Adjust as needed) percentage of kWh to sample from Shoulder 2.
+                   # Note: the percentage of c1 will shift to off-peak.
 
 # Data Sampling - Load Shifting
 # =============================================================================
@@ -385,37 +386,37 @@ c1 <- 0.1 # (Adjust as needed) percentage of kWh that will migrate from Shoulder
 # dailyPeak_L1 Sampling and Shifting (uses a1, d1, e1)
 for (dayData in dailyPeak_L1) {
   dailyIndexes <- dayData$Index  # Extract the indexes for the current day
-  TZ <- peak.sample.shifting(TZ, dailyIndexes)  # Sample data and perform load shifting
+  TZ <- peak.sample.shifting(TZ, dailyIndexes)  # Sample data and apply load shifting
 }
 
 # dailyPeak_L2 Sampling and Shifting (uses a1, d1, e1)
 for (dayData in dailyPeak_L2) {
   dailyIndexes <- dayData$Index  # Extract the indexes for the current day
-  TZ <- peak.sample.shifting(TZ, dailyIndexes)  # Sample data and perform load shifting
+  TZ <- peak.sample.shifting(TZ, dailyIndexes)  # Sample data and apply load shifting
 }
 
 # dailyShoulder1_L1 Sampling and Shifting (uses b1, g1)
 for (dayData in dailyShoulder1_L1) {
   dailyIndexes <- dayData$Index  # Extract the indexes for the current day
-  TZ <- shoulder1.sample.shifting(TZ, dailyIndexes)  # Sample data and perform load shifting
+  TZ <- shoulder1.sample.shifting(TZ, dailyIndexes)  # Sample data and apply load shifting
 }
 
 # dailyShoulder1_L2 Sampling and Shifting (uses b1, g1)
 for (dayData in dailyShoulder1_L2) {
   dailyIndexes <- dayData$Index  # Extract the indexes for the current day
-  TZ <- shoulder1.sample.shifting(TZ, dailyIndexes)  # Sample data and perform load shifting
+  TZ <- shoulder1.sample.shifting(TZ, dailyIndexes)  # Sample data and apply load shifting
 }
 
 # dailyShoulder2_L1 Sampling and Shifting (uses c1)
 for (dayData in dailyShoulder2_L1) {
   dailyIndexes <- dayData$Index  # Extract the indexes for the current day
-  TZ <- shoulder2.sample.shifting(TZ, dailyIndexes)  # Sample data and perform load shifting
+  TZ <- shoulder2.sample.shifting(TZ, dailyIndexes)  # Sample data and apply load shifting
 }
 
 # dailyShoulder2_L2 Sampling and Shifting (uses c1)
 for (dayData in dailyShoulder2_L2) {
   dailyIndexes <- dayData$Index  # Extract the indexes for the current day
-  TZ <- shoulder2.sample.shifting(TZ, dailyIndexes)  # Sample data and perform load shifting
+  TZ <- shoulder2.sample.shifting(TZ, dailyIndexes)  # Sample data and apply load shifting
 }
 
 # Post-Processing After Load Shifting

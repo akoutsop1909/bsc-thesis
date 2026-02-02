@@ -2,22 +2,22 @@
 # Script to Generate the Plots of Chapter 6 Studying Load Shifting Cases
 # =============================================================================
 # This script presents the results of load shifting applied to the Time Zones
-# structure across two main cases, each containing five subcases. The simulation 
-# used varying percentages of load shifted between time zones for each subcase.
+# structure across two main cases, each with five subcases. The simulation used
+# varying percentages of kWh shifted between zones for each subcase.
 #
 #  - Case 1: Load shifting using the same percentage for a1, b1, and c1 in each subcase:
-#    - Subcase 1: 0.1 (10% of the load)
-#    - Subcase 2: 0.2 (20% of the load)
-#    - Subcase 3: 0.3 (30% of the load)
-#    - Subcase 4: 0.4 (40% of the load)
-#    - Subcase 5: 0.5 (50% of the load)
+#    - Subcase 1: 0.1 (10% of kWh)
+#    - Subcase 2: 0.2 (20% of kWh)
+#    - Subcase 3: 0.3 (30% of kWh)
+#    - Subcase 4: 0.4 (40% of kWh)
+#    - Subcase 5: 0.5 (50% of kWh)
 #
 #  - Case 2: Load shifting using only the a1 percentage across all subcases:
-#    - Subcase 1: 0.1 (10% of the load)
-#    - Subcase 2: 0.2 (20% of the load)
-#    - Subcase 3: 0.3 (30% of the load)
-#    - Subcase 4: 0.4 (40% of the load)
-#    - Subcase 5: 0.5 (50% of the load)
+#    - Subcase 1: 0.1 (10% of kWh)
+#    - Subcase 2: 0.2 (20% of kWh)
+#    - Subcase 3: 0.3 (30% of kWh)
+#    - Subcase 4: 0.4 (40% of kWh)
+#    - Subcase 5: 0.5 (50% of kWh)
 #
 # Several visualizations were created to study each case and subcase, including
 # kWh per time zone, weekly and daily power demand, and energy saving comparisons.
