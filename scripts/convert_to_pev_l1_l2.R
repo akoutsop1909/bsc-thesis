@@ -2,8 +2,8 @@
 # Script to Convert Time Zones or Load Shifting Structure to PEV_L1 and PEV_L2 Structure
 # =============================================================================
 # This script takes a Time Zones or Load Shifting structure (which categorizes
-# PEV power demand into time zones) and converts it back to the original PEV_L1 
-# and PEV_L2 charging profiles.
+# PEV charges into time zones) and converts it back to the original PEV_L1 and 
+# PEV_L2 charging profiles.
 #
 # The output CSV files (one for L1 and one for L2) include the following columns:
 # 'Time'        : Represents the 10-minute intervals (in "d/m/yyyy H:MM" format).
@@ -30,7 +30,7 @@ convert.to.pev_lx <- function(pev_df, tz_df, watt) {
   if (watt == 6600) 
     k <- match("L2", tz_df$Charge_Type) # Find the index of the "L2" charge type
   else 
-    k <- 1 # Default to the first session for L1
+    k <- 1 # Default to the first charging session for L1
   
   for (j in 2:ncol(pev_df)) { # Iterate over PEVs (columns)
     for (i in 1:nrow(pev_df)) { # Iterate over time slots (rows)
@@ -42,21 +42,21 @@ convert.to.pev_lx <- function(pev_df, tz_df, watt) {
         pev_df[i,j] <- watt
         charge_progress <- charge_progress + 1
         
-        # If Charge Duration is 1, move to the next session
+        # If Charge Duration is 1, move to the next charging session
         if (tz_df$Charge_Duration[k] == 1) {
-          # Reset for next charge
+          # Reset for next charging session
           charge_progress <- 1
           k <- k + 1
         }
       }
       
-      # Next occurrences (continuing charging)
+      # Next occurrences (continuing charging session)
       else if (charge_progress > 1) {
         pev_df[i,j] <- watt
         
         # Check if last occurrence (end of charging session)
         if (charge_progress == tz_df$Charge_Duration[k]) {
-          # Reset for next charge
+          # Reset for next charging session
           charge_progress <- 1
           k <- k + 1
         } else {

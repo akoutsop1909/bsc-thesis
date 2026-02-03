@@ -9,15 +9,15 @@
 #
 # The output CSV file includes the following columns:
 # 'Charge_Type'     : (Character) Charging type/level ("L1" or "L2")
-# 'Charge_Date'     : (Character) Date of charging (d/m/yyyy, e.g., "5/1/2010")
+# 'Charge_Date'     : (Character) Date of charging session (d/m/yyyy, e.g., "5/1/2010")
 # 'Day_Type'        : (Character) Day type ("Weekday" or "Weekend").
 # 'PEV_Code'        : (Character) Vehicle identifier including household info (e.g., "H001.V001")
-# 'Charge_Duration' : (Integer)   Duration of charging in 10-minute slots.
+# 'Charge_Duration' : (Integer)   Duration of charging session in 10-minute slots.
 # 'Start_Time'      : (Character) Start time of charging session (H:MM).
 # 'Stop_Time'       : (Character) Stop time of charging session (H:MM).
 # 'Time_Zone'       : (Character) Time zone classification (e.g., "Shoulder 1", "Peak").
-# 'KWh'             : (Numeric)   Energy consumed during session (kWh). 
-# 'Spans_Zones'     : (Logical)   TRUE if session spans more than one time zone. 
+# 'KWh'             : (Numeric)   Energy consumed during charging session (kWh). 
+# 'Spans_Zones'     : (Logical)   TRUE if the charging session spans more than one time zone. 
 
 # Load Packages
 # =============================================================================
@@ -40,7 +40,7 @@ create.time.slots <- function(start_time, stop_time) {
   return(paste(hour(slots), format(slots,"%M"), sep = ":"))
 }
 
-# Checks if the charge should split based on time zone and day type
+# Checks if the charging session should split based on time zone and day type
 should.split.charge <- function(df, i, weekdayTimeZones, weekendTimeZones) {
   nextChargeTime <- paste(hour(df$Time[i+1]), format(df$Time[i+1], "%M"), sep = ":")
   
@@ -67,7 +67,7 @@ convert.to.time.zones <- function(file, watt, type) {
   lower <- which(df$Time >= dmy_hm("4-1-2010 0:00"))[1]
   upper <- tail(which(df$Time <= dmy_hm("8-1-2010 23:50")), 1)
   
-  # Define time zone boundaries for weekdays and weekends (holidays)
+  # Define time zone boundaries for weekdays and weekends
   weekdayTimeZones <- c("7:00", "14:00", "20:00", "22:00")  # Weekday Time Zones: Shoulder 1, Peak, Shoulder 2, Off Peak
   weekendTimeZones <- c("7:00", "22:00")  # Weekend Time Zones: Shoulder, Off Peak
   
@@ -75,7 +75,7 @@ convert.to.time.zones <- function(file, watt, type) {
   Charge_Date <- NA     # (Character): Date of charging (d/m/yyyy, e.g., "5/1/2010").
   Day_Type <- NA        # (Character): Day type ("Weekday" or "Weekend").
   PEV_Code <- NA        # (Character): Vehicle identifier including household info (e.g., "H001.V001").
-  Charge_Duration <- NA # (Integer)  : Duration of charging in 10-minute slots.
+  Charge_Duration <- NA # (Integer)  : Duration of charging session in 10-minute slots.
   Start_Time <- NA      # (Character): Start time of charging session (H:MM).
   Stop_Time <- NA       # (Character): Stop time of charging session (H:MM).
   
@@ -95,27 +95,27 @@ convert.to.time.zones <- function(file, watt, type) {
         
         duration <- 1
         
-        # If the charge should split (i.e., the next time falls into a new time zone), update charge details
+        # If the charging session should split (i.e., the next time falls into a new time zone), update charge details
         if (should.split.charge(df, i, weekdayTimeZones, weekendTimeZones)) {
           Charge_Duration[k] <- duration
           Stop_Time[k] <- paste(hour(df$Time[i]), format(df$Time[i],"%M"), sep = ":")
           
-          # Reset for next charge
+          # Reset for next charging session
           duration <- 0
           k <- k + 1
         }
       }
       
-      # Next occurrences (continuing charging)
+      # Next occurrences (continuing charging session)
       else if (df[i,j] == watt && duration != 0) {
         duration <- duration + 1
         
-        # If the charge should split (i.e., the next time falls into a new time zone), update charge details
+        # If the charging session should split (i.e., the next time falls into a new time zone), update charge details
         if (should.split.charge(df, i, weekdayTimeZones, weekendTimeZones)) {
           Charge_Duration[k] <- duration
           Stop_Time[k] <- paste(hour(df$Time[i]), format(df$Time[i],"%M"), sep = ":")
           
-          # Reset for next charge
+          # Reset for next charging session
           duration <- 0
           k <- k + 1
         }
@@ -126,7 +126,7 @@ convert.to.time.zones <- function(file, watt, type) {
         Charge_Duration[k] <- duration
         Stop_Time[k] <- paste(hour(df$Time[i-1]), format(df$Time[i-1],"%M"), sep = ":")
         
-        # Reset for next charge
+        # Reset for next charging session
         duration <- 0
         k <- k + 1
       }
