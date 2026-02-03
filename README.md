@@ -8,12 +8,12 @@ As plug-in electric vehicle (PEV) adoption accelerates, uncoordinated charging d
 > This thesis was completed in 2020. Since then, I've made several improvements, including implementing `dplyr` pipelines to streamline the code, enhancing the simulation model's sampling method, and adopting the **RColorBrewer Dark 2** color-blind friendly palette for visualizations.
 
 ## ⚙️ System Requirements
-* **R** and an **R IDE** (e.g., **R Studio**) are required. You can download both from the [official RStudio website](https://posit.co/download/rstudio-desktop/).
+* **R** and an **R IDE** (e.g., **RStudio**) are required. You can download both from the [official RStudio website](https://posit.co/download/rstudio-desktop/).
 * You will also need the following R packages: `ggplot2`, `RColorBrewer`, `lubridate`, `dplyr`, and `glue`. You can install them by running this command in your R console:  
 ```
 install.packages(c("ggplot2", "RColorBrewer", "lubridate", "dplyr", "glue"))
 ```
-* To ensure correct date formatting, your computer's display language must be set to **English (United States)** in the language settings.
+* To ensure correct date handling, your computer's display language must be set to **English (United States)** in the language settings.
 > [!NOTE]
 > If you prefer to view the generated graphs without setting up the coding environment or running your own simulations, you can access a **Colab notebook** linked in the **About** section of this repository. This notebook summarizes Chapter 2 of the thesis, presenting key findings and relevant graphs generated from pre-executed code. It also provides links to additional notebooks for other chapters of the thesis, where you can explore further insights and visualizations.
 
@@ -73,24 +73,24 @@ All datasets are complete with no missing values for any time interval.
 | L2          | 1/1/2010   | Weekday  | H001.V001 | 3               | 11:30      | 11:50     | Shoulder 1 | 3,3  | FALSE       |
 | L2          | 2/1/2010   | Weekend  | H001.V001 | 1               | 11:30      | 11:30     | Shoulder   | 1,1  | FALSE       |
 | ...         | ...        | ...      | ...       | ...             | ...        | ...       | ...        | ...  | ...         |
-| L2          | 31/12/2010 | Weekend  | H200.V348 | 6               | 18:50      | 19:40     | Peak       | 6,6  | FALSE       |
+| L2          | 31/12/2010 | Weekday  | H200.V348 | 6               | 18:50      | 19:40     | Peak       | 6,6  | FALSE       |
 
 ### Data Clarifications
 * **PEV column names:** Each label corresponds to a unique household-vehicle combination. For example, `H001.V001` refers to **Vehicle 1 (V001)** in **Household 1 (H001)**. This naming pattern applies to all 348 vehicles.
 * **PEV charging:** A value of **zero** means the vehicle is **not charging** at that time, while any **non-zero** value (1920 for Level 1 or 6600 for Level 2) indicates the charging power in watts.
 * **Charging types:** **Level 1** (L1) charging uses a standard 120V household outlet and consumes **1920 W**, making it the slowest and most affordable option. **Level 2** (L2) charging uses a 240V outlet and consumes **6600 W**. It is faster than Level 1 but more expensive and requires special equipment to connect to the 240V outlet.
-* **Spans_Zones**: This column in **Time Zones** indicates whether the charging session **spans more than one zone** (e.g., starts in Shoulder 1 and stops in Peak). If so, the value is `TRUE`; otherwise, it is `FALSE`, meaning the entire session occurs within a single zone.
+* **Spans_Zones**: This **Time Zones** column indicates whether a charge **spans more than one zone** (e.g., starts in Shoulder 1 and stops in Peak). If so, the value is `TRUE`; otherwise, it is `FALSE`, meaning the entire charge occurs within a single zone.
 
 ## 🚀 Getting Started
 Clone this repository to your local machine following the [instructions from GitHub](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository). Inside, you will find the **/data** and **/scripts** folders: 
 * The **/data** folder contains:
   * The **processed** datasets used in the research, including household electricity demand (**Household.csv**) and PEV charging profiles (**PEV_L1.csv** and **PEV_L2.csv**).
   * The **Time Zones** data, including the full yearly dataset (**TimeZones_full.csv**) and a subset of one week from January (**TimeZones.csv**).
-  * Datasets generated after applying **load shifting** (a technique that shifts a percentage of PEV charges from peak to off-peak hours to balance grid load) on the Time Zones data. These datasets cover two main simulation cases, each with five subcases that vary the percentage of kWh shifted between zones.
+  * Datasets generated after applying **load shifting** (a technique that shifts a percentage of PEV charges from peak to off-peak hours to balance grid load) to the Time Zones data. These datasets cover two main simulation cases, each with five subcases that vary the percentage of kWh shifted between zones.
 * The **/scripts** folder contains the necessary **R scripts** for data processing, analysis, and simulation.
 
 ### Running the Scripts
-Each script begins with helpful instructions, package loading, and setting the current working directory, which should point to the **/data** folder. They are configured to load the data, but you can modify the paths if needed. Depending on the task, a script will either process and save the data as `.csv` files to the specified directory or create visualizations, which you can view directly in your R IDE's plot window or save to your desired location. 
+Each script begins with instructions, package loading, and sets the working directory to the **/data** folder. The scripts are pre-configured to load data from subfolders, but you can modify the paths if needed. Some process and save data as `.csv` files to the specified directory, while others generate visualizations that you can view directly in your R IDE's plot window or save to your preferred location. 
 
 <p align="center">
   <b>⚠️The rest of the readme is under construction⚠️</b>
@@ -104,7 +104,7 @@ Each script begins with helpful instructions, package loading, and setting the c
 
 ## ⌨️ Demo Run
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/91ad9dce-2bba-4d8d-8299-799e28eb0621" alt="Figure 3 1 - Average yearly demand by day">
+<img width="1060" height="573" alt="Rplot" src="https://github.com/user-attachments/assets/99b6a12f-47a4-4941-b599-cc0de970e71b" />
 </p>
 
 ## 📂 Folder Structure
